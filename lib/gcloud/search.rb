@@ -140,7 +140,7 @@ module Gcloud
   # set the value in a field when providing your own document id.
   #
   #   field = document.field "sku"
-  #   field.add_value "product-sku-000001", tokenization: :atom
+  #   field.add_value "product-sku-000001", type: :atom
   #
   # Save the document into the index:
   #
@@ -223,8 +223,8 @@ module Gcloud
   #   index = search.index "products"
   #   document = index.document "product-sku-000001"
   #   field = document.field "description"
-  #   field.add_value "The best T-shirt ever.", tokenization: :text
-  #   field.add_value "<p>The best T-shirt ever.</p>", tokenization: :html
+  #   field.add_value "The best T-shirt ever.", type: :text, lang: "en"
+  #   field.add_value "<p>The best T-shirt ever.</p>", type: :html, lang: "en"
   #
   # == Searching
   #
@@ -238,8 +238,8 @@ module Gcloud
   #
   #   index = search.index "products"
   #   query = search.query "t-shirt"
-  #   matching_documents = index.search query  # API call
-  #   matching_documents.map &:id #=> ["product-sku-000001"]
+  #   documents = index.search query  # API call
+  #   documents.map &:id #=> ["product-sku-000001"]
   #
   # By default, all queries are sorted by the rank value set when the
   # document was created. For more information see the {REST API
@@ -252,7 +252,8 @@ module Gcloud
   #   gcloud = Gcloud.new
   #   search = gcloud.search
   #
-  #   ordered = search.query "t-shirt", order_by: ["price", "-avg_review"]
+  #   query = search.query "t-shirt", order_by: ["price", "-avg_review"]
+  #   documents = index.search query  # API call
   #
   # Note that the - character before avg_review means that this query will
   # be sorted ascending by price and then descending by avg_review.
@@ -264,7 +265,125 @@ module Gcloud
   #   gcloud = Gcloud.new
   #   search = gcloud.search
   #
-  #   projected = search.query "t-shirt", fields: ["sku", "price"]
+  #   query = search.query "t-shirt", fields: ["sku", "description"]
+  #   documents = index.search query  # API call
+  #
+  # == Fields (discussion)
+  #
+  # The current Search JSON API is fairly simple; Document fields are probably
+  # the hardest part of it to understand. We need to decide the best way
+  # for our own API to manage fields.
+  #
+  # == Setting fields
+  #
+  # ==== Option 1: Grouped by name
+  #
+  # Multiple field values are set on a Field object created by name. This is the
+  # approach taken by the REST API as well as gcloud-python. (What should happen if a
+  # Field with the same name already exists? The gcloud-python impl appears to
+  # replace it with a new one.)
+  #
+  #   document = index.document "product-sku-000001"
+  #
+  #   field = document.field "description"
+  #   field.add_value "100% organic cotton ruby gem T-shirt",
+  #                   type: :text,
+  #                   lang: "en"
+  #   field.add_value "<p>100% organic cotton ruby gem T-shirt</p>",
+  #                   type: :html,
+  #                   lang: "en"
+  #   field.values.count #=> 2
+  #
+  # ==== Option 2: Flat
+  #
+  # Fields are added to a single collection. Field name is not unique.
+  #
+  #   document = index.document "product-sku-000001"
+  #
+  #   document.add_field "description",
+  #                      "100% organic cotton ruby gem T-shirt",
+  #                      type: :text,
+  #                      lang: "en"
+  #
+  #   document.add_field "description",
+  #                      "<p>100% organic cotton ruby gem T-shirt</p>",
+  #                      type: :html,
+  #                      lang: "en"
+  #   document.fields_by(name: "description").count #=> 2
+  #
+  # An advantage of the flat structure is that you don't have to go through the
+  # extra step of creating/retrieving a collecting Field object in order to add
+  # a field value. A disadvantage is that it is a little harder to inspect the
+  # values you have already added.
+  #
+  # == Getting fields
+  #
+  # ==== Option 1: Grouped by name
+  #
+  # Fields are returned grouped by name, as a hash of objects. This is
+  # the approach taken by the REST API as well as gcloud-python.
+  #
+  #   document = index.document "product-sku-000001"
+  #
+  #   field = document.fields["description"]
+  #
+  #   field.values[0].field.name #=> "description"
+  #   field.values[0].value #=> "100% organic cotton ruby gem T-shirt"
+  #   field.values[0].type #=> :text
+  #   field.values[0].lang #=> "en"
+  #   field.values[1].field.name #=> "description"
+  #   field.values[1].value #=> "<p>100% organic cotton ruby gem T-shirt</p>"
+  #   field.values[1].type #=> :html
+  #   field.values[1].lang #=> "en"
+  #
+  # Each value contains a reference back to its field. (Without it, building an array of
+  # values collected from multiple fields is problematic, since the names are lost.)
+  #
+  # ==== Option 2: Flat
+  #
+  # Fields are returned flat, in a single array, with non-unique name. They
+  # can be filtered (grouped) in Ruby using Document#fields_by or Array#select.
+  #
+  #   index = search.index "products"
+  #   query = search.query "t-shirt"
+  #   document = index.document "product-sku-000001"
+  #
+  #   fields = document.fields_by(name: "description")
+  #   # Same as
+  #   fields = document.fields.select {|f| f.name == "description"}
+  #
+  #   fields[0].name #=> "description"
+  #   fields[0].value #=> "100% organic cotton ruby gem T-shirt"
+  #   fields[0].type #=> :text
+  #   fields[0].lang #=> "en"
+  #   fields[1].name #=> "description"
+  #   fields[1].value #=> "<p>100% organic cotton ruby gem T-shirt</p>"
+  #   fields[1].type #=> :html
+  #   fields[1].lang #=> "en"
+  #
+  # An advantage of the flat structure is that the fields can just as easily
+  # be filtered by a different attribute. In practice, I have found that pre-grouped
+  # data structures often do more harm than good. An example is the
+  # [Zonefile](https://github.com/boesemar/zonefile) library, which returns RRs
+  # in a hash grouped by type. The values do not contain the type, so converting
+  # to a flat structure that included type and the other attributes in each
+  # element is a chore.
+  #
+  # You can just as easily filter the fields by attributes other than name.
+  #
+  #   index = search.index "products"
+  #   query = search.query "t-shirt"
+  #   document = index.document "product-sku-000001"
+  #
+  #   fields = document.fields_by(type: :html, lang: "en")
+  #   # Same as
+  #   fields = document.fields.select {|f| f.type == :html && f.lang == "en"}
+  #
+  #   fields[0].name #=> "description"
+  #   fields[0].value #=> "<p>100% organic cotton ruby gem T-shirt</p>"
+  #   fields[0].type #=> :html
+  #   fields[0].lang #=> "en"
+  #
   module Search
   end
 end
