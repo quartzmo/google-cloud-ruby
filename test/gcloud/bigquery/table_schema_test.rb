@@ -26,8 +26,8 @@ describe Gcloud::Bigquery::Table, :mock_bigquery do
   let(:etag) { "etag123456789" }
   let(:location_code) { "US" }
   let(:url) { "http://googleapi/bigquery/v2/projects/#{project}/datasets/#{dataset}/tables/#{table_id}" }
-  let(:table_hash) { random_table_hash dataset, table_id, table_name, description }
-  let(:table) { Gcloud::Bigquery::Table.from_gapi table_hash, bigquery.connection }
+  let(:table_hash) { random_table_gapi dataset, table_id, table_name, description }
+  let(:table) { Gcloud::Bigquery::Table.from_gapi table_hash, bigquery.service }
 
   let(:schema) { table.schema.dup }
 
@@ -140,52 +140,52 @@ describe Gcloud::Bigquery::Table, :mock_bigquery do
   protected
 
   def new_table_hash
-    random_table_hash dataset, table_id, table_name, description
+    random_table_gapi dataset, table_id, table_name, description
   end
 
   def field_string_required
     {
-      "name" => "first_name",
-      "type" => "STRING",
-      "mode" => "REQUIRED"
+      name: "first_name",
+      type: "STRING",
+      mode: "REQUIRED"
     }
   end
 
   def field_integer
     {
-      "name" => "rank",
-      "type" => "INTEGER",
-      "description" => "An integer value from 1 to 100"
+      name: "rank",
+      type: "INTEGER",
+      description: "An integer value from 1 to 100"
     }
   end
 
   def field_float
     {
-      "name" => "accuracy",
-      "type" => "FLOAT"
+      name: "accuracy",
+      type: "FLOAT"
     }
   end
 
   def field_boolean
     {
-      "name" => "approved",
-      "type" => "BOOLEAN"
+      name: "approved",
+      type: "BOOLEAN"
     }
   end
 
   def field_timestamp
     {
-      "name" => "start_date",
-      "type" => "TIMESTAMP"
+      name: "start_date",
+      type: "TIMESTAMP"
     }
   end
 
   def field_record_repeated
     {
-      "name" => "cities_lived",
-      "type" => "RECORD",
-      "mode" => "REPEATED",
-      "fields" => [ field_integer, field_timestamp ]
+      name: "cities_lived",
+      type: "RECORD",
+      mode: "REPEATED",
+      fields: [ field_integer, field_timestamp ]
     }
   end
 end

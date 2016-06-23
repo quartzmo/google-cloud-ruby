@@ -22,9 +22,9 @@ describe Gcloud::Bigquery::View, :data, :mock_bigquery do
   let(:etag) { "etag123456789" }
   let(:location_code) { "US" }
   let(:url) { "http://googleapi/bigquery/v2/projects/#{project}/datasets/#{dataset_id}/tables/#{table_id}" }
-  let(:view_hash) { random_view_hash dataset_id, table_id, table_name, description }
+  let(:view_hash) { random_view_gapi dataset_id, table_id, table_name, description }
   let(:view) { Gcloud::Bigquery::View.from_gapi view_hash,
-                                                bigquery.connection }
+                                                bigquery.service }
 
   it "returns data as a list of hashes" do
     mock_connection.post "/bigquery/v2/projects/#{project}/queries" do |env|

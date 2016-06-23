@@ -22,10 +22,10 @@ describe Gcloud::Bigquery::Dataset, :attributes, :mock_bigquery do
   let(:dataset_name) { "My Dataset" }
   let(:description) { "This is my dataset" }
   let(:default_expiration) { 999 }
-  let(:dataset_hash) { random_dataset_small_hash dataset_id, dataset_name }
-  let(:dataset_full_json) { random_dataset_hash(dataset_id, dataset_name, description, default_expiration).to_json }
+  let(:dataset_hash) { random_dataset_small_gapi dataset_id, dataset_name }
+  let(:dataset_full_json) { random_dataset_gapi(dataset_id, dataset_name, description, default_expiration).to_json }
   let(:dataset) { Gcloud::Bigquery::Dataset.from_gapi dataset_hash,
-                                                      bigquery.connection }
+                                                      bigquery.service }
 
   it "gets full data for created_at" do
     mock_connection.get "/bigquery/v2/projects/#{project}/datasets/#{dataset.dataset_id}" do |env|

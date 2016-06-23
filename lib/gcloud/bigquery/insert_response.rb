@@ -33,14 +33,14 @@ module Gcloud
       end
 
       def error_count
-        @error_count ||= Array(@gapi["insertErrors"]).count
+        @error_count ||= Array(@gapi.insert_errors).count
       end
 
       def insert_errors
         @insert_errors ||= begin
-          Array(@gapi["insertErrors"]).map do |ie|
-            row = @rows[ie["index"]]
-            errors = ie["errors"]
+          Array(@gapi.insert_errors).map do |ie|
+            row = @rows[ie.index]
+            errors = ie.errors
             InsertError.new row, errors
           end
         end
@@ -48,8 +48,8 @@ module Gcloud
 
       def error_rows
         @error_rows ||= begin
-          Array(@gapi["insertErrors"]).map do |ie|
-            @rows[ie["index"]]
+          Array(@gapi.insert_errors).map do |ie|
+            @rows[ie.index]
           end
         end
       end

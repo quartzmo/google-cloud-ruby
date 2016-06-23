@@ -17,9 +17,9 @@ require "helper"
 describe Gcloud::Bigquery::Dataset, :access, :mock_bigquery do
   # Create a dataset object with the project's mocked connection object
   let(:dataset_id) { "my_dataset" }
-  let(:dataset_hash) { random_dataset_hash dataset_id }
+  let(:dataset_hash) { random_dataset_gapi dataset_id }
   let(:dataset) { Gcloud::Bigquery::Dataset.from_gapi dataset_hash,
-                                                      bigquery.connection }
+                                                      bigquery.service }
 
   it "gets the access rules" do
     dataset.access.must_be :empty?
@@ -39,7 +39,7 @@ describe Gcloud::Bigquery::Dataset, :access, :mock_bigquery do
       rule["role"].must_equal "WRITER"
       rule["userByEmail"].must_equal "writers@example.com"
 
-      ret_dataset = random_dataset_hash(dataset_id)
+      ret_dataset = random_dataset_gapi(dataset_id)
       ret_dataset["access"] = access
       [200, {"Content-Type"=>"application/json"},
        ret_dataset.to_json]
@@ -62,7 +62,7 @@ describe Gcloud::Bigquery::Dataset, :access, :mock_bigquery do
       rule["role"].must_equal "WRITER"
       rule["userByEmail"].must_equal "writers@example.com"
 
-      ret_dataset = random_dataset_hash(dataset_id)
+      ret_dataset = random_dataset_gapi(dataset_id)
       ret_dataset["access"] = access
       [200, {"Content-Type"=>"application/json"},
        ret_dataset.to_json]
@@ -89,7 +89,7 @@ describe Gcloud::Bigquery::Dataset, :access, :mock_bigquery do
       rule["role"].must_equal "WRITER"
       rule["groupByEmail"].must_equal "writers@example.com"
 
-      ret_dataset = random_dataset_hash(dataset_id)
+      ret_dataset = random_dataset_gapi(dataset_id)
       ret_dataset["access"] = access
       [200, {"Content-Type"=>"application/json"},
        ret_dataset.to_json]
@@ -116,7 +116,7 @@ describe Gcloud::Bigquery::Dataset, :access, :mock_bigquery do
       rule["role"].must_equal "OWNER"
       rule["domain"].must_equal "example.com"
 
-      ret_dataset = random_dataset_hash(dataset_id)
+      ret_dataset = random_dataset_gapi(dataset_id)
       ret_dataset["access"] = access
       [200, {"Content-Type"=>"application/json"},
        ret_dataset.to_json]
@@ -143,7 +143,7 @@ describe Gcloud::Bigquery::Dataset, :access, :mock_bigquery do
       rule["role"].must_equal "READER"
       rule["specialGroup"].must_equal "allAuthenticatedUsers"
 
-      ret_dataset = random_dataset_hash(dataset_id)
+      ret_dataset = random_dataset_gapi(dataset_id)
       ret_dataset["access"] = access
       [200, {"Content-Type"=>"application/json"},
        ret_dataset.to_json]
@@ -158,9 +158,9 @@ describe Gcloud::Bigquery::Dataset, :access, :mock_bigquery do
 
   describe :view do
     let(:view_id) { "new-view" }
-    let(:view_hash) { random_view_hash dataset_id, view_id }
+    let(:view_hash) { random_view_gapi dataset_id, view_id }
     let(:view) { Gcloud::Bigquery::View.from_gapi view_hash,
-                                                  bigquery.connection }
+                                                  bigquery.service }
 
     it "adds an access entry with specifying a view object" do
       mock_connection.patch "/bigquery/v2/projects/#{project}/datasets/#{dataset_id}" do |env|
@@ -179,7 +179,7 @@ describe Gcloud::Bigquery::Dataset, :access, :mock_bigquery do
         rule["view"]["datasetId"].must_equal dataset_id
         rule["view"]["tableId"].must_equal view_id
 
-        ret_dataset = random_dataset_hash(dataset_id)
+        ret_dataset = random_dataset_gapi(dataset_id)
         ret_dataset["access"] = access
         [200, {"Content-Type"=>"application/json"},
          ret_dataset.to_json]
@@ -207,7 +207,7 @@ describe Gcloud::Bigquery::Dataset, :access, :mock_bigquery do
         rule["view"]["datasetId"].must_equal "test-dataset_id"
         rule["view"]["tableId"].must_equal "test-view_id"
 
-        ret_dataset = random_dataset_hash(dataset_id)
+        ret_dataset = random_dataset_gapi(dataset_id)
         ret_dataset["access"] = access
         [200, {"Content-Type"=>"application/json"},
          ret_dataset.to_json]
@@ -238,7 +238,7 @@ describe Gcloud::Bigquery::Dataset, :access, :mock_bigquery do
       rule2["role"].must_equal "READER"
       rule2["groupByEmail"].must_equal "readers@example.com"
 
-      ret_dataset = random_dataset_hash(dataset_id)
+      ret_dataset = random_dataset_gapi(dataset_id)
       ret_dataset["access"] = access
       [200, {"Content-Type"=>"application/json"},
        ret_dataset.to_json]
@@ -262,12 +262,12 @@ describe Gcloud::Bigquery::Dataset, :access, :mock_bigquery do
 
   describe :remove do
     let(:dataset_hash) do
-      hash = random_dataset_hash dataset_id
+      hash = random_dataset_gapi dataset_id
       hash["access"] = [
-        { "role" => "WRITER",
-          "userByEmail" => "writer@example.com"},
-        { "role" => "READER",
-          "userByEmail" => "reader@example.com"},
+        { role: "WRITER",
+          userByEmail: "writer@example.com"},
+        { role: "READER",
+          userByEmail: "reader@example.com"},
       ]
       hash
     end
@@ -286,7 +286,7 @@ describe Gcloud::Bigquery::Dataset, :access, :mock_bigquery do
         rule["role"].must_equal "WRITER"
         rule["userByEmail"].must_equal "writer@example.com"
 
-        ret_dataset = random_dataset_hash(dataset_id)
+        ret_dataset = random_dataset_gapi(dataset_id)
         ret_dataset["access"] = access
         [200, {"Content-Type"=>"application/json"},
          ret_dataset.to_json]

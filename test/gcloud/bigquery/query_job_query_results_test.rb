@@ -16,7 +16,7 @@ require "helper"
 
 describe Gcloud::Bigquery::QueryJob, :query_results, :mock_bigquery do
   let(:job) { Gcloud::Bigquery::Job.from_gapi query_job_hash,
-                                              bigquery.connection }
+                                              bigquery.service }
   let(:job_id) { job.job_id }
 
   it "can retrieve query results" do
@@ -213,120 +213,120 @@ describe Gcloud::Bigquery::QueryJob, :query_results, :mock_bigquery do
   end
 
   def query_job_hash
-    hash = random_job_hash("job9876543210")
+    hash = random_job_gapi("job9876543210")
     hash["configuration"]["query"] = {
-      "query" => "SELECT name, age, score, active FROM [users]",
-      "destinationTable" => {
-        "projectId" => "target_project_id",
-        "datasetId" => "target_dataset_id",
+      query: "SELECT name, age, score, active FROM [users]",
+      destinationTable: {
+        projectId: "target_project_id",
+        datasetId: "target_dataset_id",
         "tableId"   => "target_table_id"
       },
-      "tableDefinitions" => {},
-      "createDisposition" => "CREATE_IF_NEEDED",
-      "writeDisposition" => "WRITE_EMPTY",
-      "defaultDataset" => {
-        "datasetId" => "my_dataset",
-        "projectId" => project
+      tableDefinitions: {},
+      create_disposition: "CREATE_IF_NEEDED",
+      write_disposition: "WRITE_EMPTY",
+      defaultDataset: {
+        datasetId: "my_dataset",
+        projectId: project
       },
-      "priority" => "BATCH",
-      "allowLargeResults" => true,
-      "useQueryCache" => true,
-      "flattenResults" => true
+      priority: "BATCH",
+      allow_large_results: true,
+      use_query_cache: true,
+      flatten_results: true
     }
     hash
   end
 
   def query_data_json token: "token1234567890"
-    query_data_hash(token: token).to_json
+    query_data_gapi(token: token).to_json
   end
 
-  def query_data_hash token: "token1234567890"
+  def query_data_gapi token: "token1234567890"
     {
-      "kind" => "bigquery#getQueryResultsResponse",
-      "etag" => "etag1234567890",
-      "jobReference" => {
-        "projectId" => project,
-        "jobId" => "job9876543210"
+      kind: "bigquery#getQueryResultsResponse",
+      etag: "etag1234567890",
+      jobReference: {
+        projectId: project,
+        jobId: "job9876543210"
       },
-      "schema" => {
-        "fields" => [
+      schema: {
+        fields: [
           {
-            "name" => "name",
-            "type" => "STRING",
-            "mode" => "NULLABLE"
+            name: "name",
+            type: "STRING",
+            mode: "NULLABLE"
           },
           {
-            "name" => "age",
-            "type" => "INTEGER",
-            "mode" => "NULLABLE"
+            name: "age",
+            type: "INTEGER",
+            mode: "NULLABLE"
           },
           {
-            "name" => "score",
-            "type" => "FLOAT",
-            "mode" => "NULLABLE"
+            name: "score",
+            type: "FLOAT",
+            mode: "NULLABLE"
           },
           {
-            "name" => "active",
-            "type" => "BOOLEAN",
-            "mode" => "NULLABLE"
+            name: "active",
+            type: "BOOLEAN",
+            mode: "NULLABLE"
           }
         ]
       },
-      "rows" => [
+      rows: [
         {
-          "f" => [
+          f: [
             {
-              "v" => "Heidi"
+              v: "Heidi"
             },
             {
-              "v" => "36"
+              v: "36"
             },
             {
-              "v" => "7.65"
+              v: "7.65"
             },
             {
-              "v" => "true"
+              v: "true"
             }
           ]
         },
         {
-          "f" => [
+          f: [
             {
-              "v" => "Aaron"
+              v: "Aaron"
             },
             {
-              "v" => "42"
+              v: "42"
             },
             {
-              "v" => "8.15"
+              v: "8.15"
             },
             {
-              "v" => "false"
+              v: "false"
             }
           ]
         },
         {
-          "f" => [
+          f: [
             {
-              "v" => "Sally"
+              v: "Sally"
             },
             {
-              "v" => nil
+              v: nil
             },
             {
-              "v" => nil
+              v: nil
             },
             {
-              "v" => nil
+              v: nil
             }
           ]
         }
       ],
-      "pageToken" => token,
-      "totalRows" => 3,
-      "totalBytesProcessed" => 456789,
-      "jobComplete" => true,
-      "cacheHit" => false
+      pageToken: token,
+      totalRows: 3,
+      totalBytesProcessed: 456789,
+      jobComplete: true,
+      cacheHit: false
     }
   end
 end

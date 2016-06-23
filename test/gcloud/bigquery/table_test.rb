@@ -25,9 +25,9 @@ describe Gcloud::Bigquery::Table, :mock_bigquery do
   let(:etag) { "etag123456789" }
   let(:location_code) { "US" }
   let(:api_url) { "http://googleapi/bigquery/v2/projects/#{project}/datasets/#{dataset}/tables/#{table_id}" }
-  let(:table_hash) { random_table_hash dataset, table_id, table_name, description }
+  let(:table_hash) { random_table_gapi dataset, table_id, table_name, description }
   let(:table) { Gcloud::Bigquery::Table.from_gapi table_hash,
-                                                  bigquery.connection }
+                                                  bigquery.service }
 
   it "knows its attributes" do
     table.name.must_equal table_name
@@ -84,7 +84,7 @@ describe Gcloud::Bigquery::Table, :mock_bigquery do
     new_description = "New description of the table."
     mock_connection.get "/bigquery/v2/projects/#{project}/datasets/#{table.dataset_id}/tables/#{table.table_id}" do |env|
       [200, {"Content-Type"=>"application/json"},
-       random_table_hash(dataset, table_id, table_name, new_description).to_json]
+       random_table_gapi(dataset, table_id, table_name, new_description).to_json]
     end
 
     table.description.must_equal description

@@ -17,13 +17,13 @@ require "helper"
 describe Gcloud::Bigquery::Project, :query, :mock_bigquery do
   let(:query) { "SELECT name, age, score, active FROM [some_project:some_dataset.users]" }
   let(:dataset_id) { "my_dataset" }
-  let(:dataset_hash) { random_dataset_hash dataset_id }
+  let(:dataset_hash) { random_dataset_gapi dataset_id }
   let(:dataset) { Gcloud::Bigquery::Dataset.from_gapi dataset_hash,
-                                                      bigquery.connection }
+                                                      bigquery.service }
   let(:table_id) { "my_table" }
-  let(:table_hash) { random_table_hash dataset_id, table_id }
+  let(:table_hash) { random_table_gapi dataset_id, table_id }
   let(:table) { Gcloud::Bigquery::Table.from_gapi table_hash,
-                                                  bigquery.connection }
+                                                  bigquery.service }
 
   it "queries the data" do
     mock_connection.post "/bigquery/v2/projects/#{project}/queries" do |env|
@@ -33,7 +33,7 @@ describe Gcloud::Bigquery::Project, :query, :mock_bigquery do
       json["defaultDataset"].must_be :nil?
       json["timeoutMs"].must_equal 10000
       json["dryRun"].must_be :nil?
-      json["useQueryCache"].must_equal true
+      json["use_query_cache"].must_equal true
       [200, {"Content-Type"=>"application/json"},
        query_data_json]
     end
@@ -93,7 +93,7 @@ describe Gcloud::Bigquery::Project, :query, :mock_bigquery do
       json["defaultDataset"].must_be :nil?
       json["timeoutMs"].must_equal 10000
       json["dryRun"].must_be :nil?
-      json["useQueryCache"].must_equal true
+      json["use_query_cache"].must_equal true
       [200, {"Content-Type"=>"application/json"},
        query_data_json]
     end
@@ -113,7 +113,7 @@ describe Gcloud::Bigquery::Project, :query, :mock_bigquery do
       json["defaultDataset"]["projectId"].must_equal project
       json["timeoutMs"].must_equal 10000
       json["dryRun"].must_be :nil?
-      json["useQueryCache"].must_equal true
+      json["use_query_cache"].must_equal true
       [200, {"Content-Type"=>"application/json"},
        query_data_json]
     end
@@ -133,7 +133,7 @@ describe Gcloud::Bigquery::Project, :query, :mock_bigquery do
       json["defaultDataset"]["projectId"].must_equal "some_random_project"
       json["timeoutMs"].must_equal 10000
       json["dryRun"].must_be :nil?
-      json["useQueryCache"].must_equal true
+      json["use_query_cache"].must_equal true
       [200, {"Content-Type"=>"application/json"},
        query_data_json]
     end
@@ -152,7 +152,7 @@ describe Gcloud::Bigquery::Project, :query, :mock_bigquery do
       json["defaultDataset"].must_be :nil?
       json["timeoutMs"].must_equal 15000
       json["dryRun"].must_be :nil?
-      json["useQueryCache"].must_equal true
+      json["use_query_cache"].must_equal true
       [200, {"Content-Type"=>"application/json"},
        query_data_json]
     end
@@ -170,7 +170,7 @@ describe Gcloud::Bigquery::Project, :query, :mock_bigquery do
       json["defaultDataset"].must_be :nil?
       json["timeoutMs"].must_equal 10000
       json["dryRun"].must_equal true
-      json["useQueryCache"].must_equal true
+      json["use_query_cache"].must_equal true
       [200, {"Content-Type"=>"application/json"},
        query_data_json]
     end
@@ -188,7 +188,7 @@ describe Gcloud::Bigquery::Project, :query, :mock_bigquery do
       json["defaultDataset"].must_be :nil?
       json["timeoutMs"].must_equal 10000
       json["dryRun"].must_be :nil?
-      json["useQueryCache"].must_equal true
+      json["use_query_cache"].must_equal true
       [200, {"Content-Type"=>"application/json"},
        query_data_json]
     end

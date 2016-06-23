@@ -26,24 +26,24 @@ describe Gcloud::Bigquery::Dataset, :mock_bigquery do
   let(:table_description) { "This is my table" }
   let(:table_schema) {
     {
-      "fields" => [
+      fields: [
         {
-          "name" => "name",
-          "type" => "STRING",
-          "mode" => "REQUIRED"
+          name: "name",
+          type: "STRING",
+          mode: "REQUIRED"
         },
         {
-          "name" => "age",
-          "type" => "INTEGER"
+          name: "age",
+          type: "INTEGER"
         },
         {
-          "name" => "score",
-          "type" => "FLOAT",
-          "description" => "A score from 0.0 to 10.0"
+          name: "score",
+          type: "FLOAT",
+          description: "A score from 0.0 to 10.0"
         },
         {
-          "name" => "active",
-          "type" => "BOOLEAN"
+          name: "active",
+          type: "BOOLEAN"
         }
       ]
     }
@@ -56,9 +56,9 @@ describe Gcloud::Bigquery::Dataset, :mock_bigquery do
   let(:etag) { "etag123456789" }
   let(:location_code) { "US" }
   let(:api_url) { "http://googleapi/bigquery/v2/projects/#{project}/datasets/#{dataset_id}" }
-  let(:dataset_hash) { random_dataset_hash dataset_id, dataset_name, dataset_description, default_expiration }
+  let(:dataset_hash) { random_dataset_gapi dataset_id, dataset_name, dataset_description, default_expiration }
   let(:dataset) { Gcloud::Bigquery::Dataset.from_gapi dataset_hash,
-                                                      bigquery.connection }
+                                                      bigquery.service }
 
   it "knows its attributes" do
     dataset.name.must_equal dataset_name
@@ -402,24 +402,24 @@ describe Gcloud::Bigquery::Dataset, :mock_bigquery do
   end
 
   def create_table_json id, name = nil, description = nil
-    random_table_hash(dataset_id, id, name, description).to_json
+    random_table_gapi(dataset_id, id, name, description).to_json
   end
 
   def create_view_json id, query, name = nil, description = nil
-    hash = random_table_hash dataset_id, id, name, description
-    hash["view"] = {"query" => query}
+    hash = random_table_gapi dataset_id, id, name, description
+    hash["view"] = {query: query}
     hash["type"] = "VIEW"
     hash.to_json
   end
 
   def find_table_json id, name = nil, description = nil
-    random_table_hash(dataset_id, id, name, description).to_json
+    random_table_gapi(dataset_id, id, name, description).to_json
   end
 
   def list_tables_json count = 2, token = nil, total = nil
-    tables = count.times.map { random_table_small_hash(dataset_id) }
-    hash = {"kind" => "bigquery#tableList", "tables" => tables,
-            "totalItems" => (total || count)}
+    tables = count.times.map { random_table_small_gapi(dataset_id) }
+    hash = {kind: "bigquery#tableList", tables: tables,
+            totalItems: (total || count)}
     hash["nextPageToken"] = token unless token.nil?
     hash.to_json
   end

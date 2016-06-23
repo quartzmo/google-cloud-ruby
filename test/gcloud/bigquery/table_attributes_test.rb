@@ -21,10 +21,10 @@ describe Gcloud::Bigquery::Table, :attributes, :mock_bigquery do
   let(:table_id) { "my_table" }
   let(:table_name) { "My Table" }
   let(:description) { "This is my table" }
-  let(:table_hash) { random_table_small_hash "my_table", table_id, table_name }
-  let(:table_full_json) { random_table_hash("my_table", table_id, table_name, description).to_json }
+  let(:table_hash) { random_table_small_gapi "my_table", table_id, table_name }
+  let(:table_full_json) { random_table_gapi("my_table", table_id, table_name, description).to_json }
   let(:table) { Gcloud::Bigquery::Table.from_gapi table_hash,
-                                                  bigquery.connection }
+                                                  bigquery.service }
 
   it "gets full data for created_at" do
     mock_connection.get "/bigquery/v2/projects/#{project}/datasets/#{table.dataset_id}/tables/#{table.table_id}" do |env|

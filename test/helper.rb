@@ -240,337 +240,350 @@ class MockPubsub < Minitest::Spec
 end
 
 class MockBigquery < Minitest::Spec
-  let(:project) { bigquery.connection.project }
-  let(:credentials) { bigquery.connection.credentials }
+  require "google/apis/bigquery_v2"
+  ##
+  # Alias to the Google Client API module
+  API = Google::Apis::BigqueryV2
+
+  let(:project) { bigquery.service.project }
+  let(:credentials) { bigquery.service.credentials }
   let(:bigquery) { $gcloud_bigquery_global ||= Gcloud::Bigquery::Project.new("test-project", OpenStruct.new) }
 
-  def setup
-    @connection = Faraday::Adapter::Test::Stubs.new
-    connection = bigquery.instance_variable_get "@connection"
-    client = connection.instance_variable_get "@client"
-    client.connection = Faraday.new do |builder|
-      # builder.options.params_encoder = Faraday::FlatParamsEncoder
-      builder.adapter :test, @connection
-    end
+  def dataset_reference_gapi project_id, dataset_id
+    API::DatasetReference.new(
+      project_id: project_id, dataset_id: dataset_id
+    )
   end
 
-  def teardown
-    @connection.verify_stubbed_calls
-  end
-
-  def mock_connection
-    @connection
-  end
-
-  def random_dataset_hash id = nil, name = nil, description = nil, default_expiration = nil, location = "US"
+  def random_dataset_gapi id = nil, name = nil, description = nil, default_expiration = nil, location = "US"
     id ||= "my_dataset"
     name ||= "My Dataset"
     description ||= "This is my dataset"
     default_expiration ||= 100
 
-    {
-      "kind" => "bigquery#dataset",
-      "etag" => "etag123456789",
-      "id" => "id",
-      "selfLink" => "http://googleapi/bigquery/v2/projects/#{project}/datasets/#{id}",
-      "datasetReference" => {
-        "datasetId" => id,
-        "projectId" => project
-      },
-      "friendlyName" => name,
-      "description" => description,
-      "defaultTableExpirationMs" => default_expiration,
-      "access" => [],
-      "creationTime" => Time.now.to_i*1000,
-      "lastModifiedTime" => Time.now.to_i*1000,
-      "location" => location
-    }
+    API::Dataset.new(
+      kind: "bigquery#dataset",
+      etag: "etag123456789",
+      id: "id",
+      self_link: "http://googleapi/bigquery/v2/projects/#{project}/datasets/#{id}",
+      dataset_reference: dataset_reference_gapi(project, id),
+      friendly_name: name,
+      description: description,
+      default_table_expiration_ms: default_expiration,
+      access: [],
+      creation_time: Time.now.to_i*1000,
+      last_modified_time: Time.now.to_i*1000,
+      location: location
+    )
   end
 
-  def random_dataset_small_hash id = nil, name = nil
+  def random_dataset_small_gapi id = nil, name = nil
     id ||= "my_dataset"
     name ||= "My Dataset"
 
-    {
-      "kind" => "bigquery#dataset",
-      "id" => "#{project}:#{id}",
-      "datasetReference" => {
-        "datasetId" => id,
-        "projectId" => project
-      },
-      "friendlyName" => name
-    }
+    API::Dataset.new(
+      kind: "bigquery#dataset",
+      id: "#{project}:#{id}",
+      dataset_reference: dataset_reference_gapi(project, id),
+      friendly_name: name
+    )
   end
 
   def invalid_dataset_id_error_json id
     {
-      "error" => {
-        "code" => 400,
-        "message" => "Invalid dataset ID \"#{id}\". Dataset IDs must be alphanumeric (plus underscores, dashes, and colons) and must be at most 1024 characters long.",
-        "errors" => [
+      error: {
+        code: 400,
+        message: "Invalid dataset ID \"#{id}\". Dataset IDs must be alphanumeric (plus underscores, dashes, and colons) and must be at most 1024 characters long.",
+        errors: [
           {
-            "message" => "Invalid dataset ID \"#{id}\". Dataset IDs must be alphanumeric (plus underscores, dashes, and colons) and must be at most 1024 characters long.",
-            "domain" => "global",
-            "reason" => "invalid"
+            message: "Invalid dataset ID \"#{id}\". Dataset IDs must be alphanumeric (plus underscores, dashes, and colons) and must be at most 1024 characters long.",
+            domain: "global",
+            reason: "invalid"
           }
         ]
       }
     }.to_json
   end
 
-  def random_table_hash dataset, id = nil, name = nil, description = nil, project_id = nil
+  def table_reference_gapi project_id, dataset_id, table_id
+    API::TableReference.new(
+      project_id: project_id, dataset_id: dataset_id, table_id: table_id
+    )
+  end
+
+  def random_table_gapi dataset, id = nil, name = nil, description = nil, project_id = nil
     id ||= "my_table"
     name ||= "Table Name"
 
-    {
-      "kind" => "bigquery#table",
-      "etag" => "etag123456789",
-      "id" => "#{project}:#{dataset}.#{id}",
-      "selfLink" => "http://googleapi/bigquery/v2/projects/#{project}/datasets/#{dataset}/tables/#{id}",
-      "tableReference" => {
-        "projectId" => (project_id || project),
-        "datasetId" => dataset,
-        "tableId" => id
-      },
-      "friendlyName" => name,
-      "description" => description,
-      "schema" => {
-        "fields" => [
-          {
-            "name" => "name",
-            "type" => "STRING",
-            "mode" => "REQUIRED"
-          },
-          {
-            "name" => "age",
-            "type" => "INTEGER"
-          },
-          {
-            "name" => "score",
-            "type" => "FLOAT",
-            "description" => "A score from 0.0 to 10.0"
-          },
-          {
-            "name" => "active",
-            "type" => "BOOLEAN"
-          }
+    API::Table.new(
+      kind: "bigquery#table",
+      etag: "etag123456789",
+      id: "#{project}:#{dataset}.#{id}",
+      self_link: "http://googleapi/bigquery/v2/projects/#{project}/datasets/#{dataset}/tables/#{id}",
+      table_reference: API::TableReference.new(
+        project_id: (project_id || project),
+        dataset_id: dataset,
+        table_id: id
+      ),
+      friendly_name: name,
+      description: description,
+      schema: API::TableSchema.new(
+        fields: [
+          API::TableFieldSchema.new(
+            name: "name",
+            type: "STRING",
+            mode: "REQUIRED"
+          ),
+          API::TableFieldSchema.new(
+            name: "age",
+            type: "INTEGER"
+          ),
+          API::TableFieldSchema.new(
+            name: "score",
+            type: "FLOAT",
+            description: "A score from 0.0 to 10.0"
+          ),
+          API::TableFieldSchema.new(
+            name: "active",
+            type: "BOOLEAN"
+          )
         ]
-      },
-      "numBytes" => 1000,
-      "numRows" => 100,
-      "creationTime" => (Time.now.to_f * 1000).floor,
-      "expirationTime" => (Time.now.to_f * 1000).floor,
-      "lastModifiedTime" => (Time.now.to_f * 1000).floor,
-      "type" => "TABLE",
-      "location" => "US"
-    }
+      ),
+      num_bytes: 1000,
+      num_rows: 100,
+      creation_time: (Time.now.to_f * 1000).floor,
+      expiration_time: (Time.now.to_f * 1000).floor,
+      last_modified_time: (Time.now.to_f * 1000).floor,
+      type: "TABLE",
+      location: "US"
+    )
   end
 
-  def random_table_small_hash dataset, id = nil, name = nil
+  def random_table_small_gapi dataset, id = nil, name = nil
     id ||= "my_table"
     name ||= "Table Name"
 
-    {
-      "kind" => "bigquery#table",
-      "id" => "#{project}:#{dataset}.#{id}",
-      "tableReference" => {
-        "projectId" => project,
-        "datasetId" => dataset,
-        "tableId" => id
-      },
-      "friendlyName" => name,
-      "type" => "TABLE"
-    }
+    API::Table.new(
+      kind: "bigquery#table",
+      id: "#{project}:#{dataset}.#{id}",
+      table_reference: API::TableReference.new(
+        project_id: project,
+        dataset_id: dataset,
+        table_id: id
+      ),
+      friendly_name: name,
+      type: "TABLE"
+    )
   end
 
-  def random_view_hash dataset, id = nil, name = nil, description = nil
+  def source_table_gapi
+    gapi = random_table_gapi "source_table_dataset_id"
+    gapi.table_reference = table_reference_gapi(
+      "source_project_id",
+      "source_dataset_id",
+      "source_table_id"
+    )
+    gapi
+  end
+
+  def destination_table_gapi
+    gapi = random_table_gapi "destination_table_dataset_id"
+    gapi.table_reference = table_reference_gapi(
+      "target_project_id",
+      "target_dataset_id",
+      "target_table_id"
+    )
+    gapi
+  end
+
+  def random_view_gapi dataset, id = nil, name = nil, description = nil
     id ||= "my_view"
     name ||= "View Name"
 
-    {
-      "kind" => "bigquery#table",
-      "etag" => "etag123456789",
-      "id" => "#{project}:#{dataset}.#{id}",
-      "selfLink" => "http://googleapi/bigquery/v2/projects/#{project}/datasets/#{dataset}/tables/#{id}",
-      "tableReference" => {
-        "projectId" => project,
-        "datasetId" => dataset,
-        "tableId" => id
-      },
-      "friendlyName" => name,
-      "description" => description,
-      "schema" => {
-        "fields" => [
-          {
-            "name" => "name",
-            "type" => "STRING",
-            "mode" => "NULLABLE"
-          },
-          {
-            "name" => "age",
-            "type" => "INTEGER",
-            "mode" => "NULLABLE"
-          },
-          {
-            "name" => "score",
-            "type" => "FLOAT",
-            "mode" => "NULLABLE"
-          },
-          {
-            "name" => "active",
-            "type" => "BOOLEAN",
-            "mode" => "NULLABLE"
-          }
+    API::Table.new(
+      kind: "bigquery#table",
+      etag: "etag123456789",
+      id: "#{project}:#{dataset}.#{id}",
+      self_link: "http://googleapi/bigquery/v2/projects/#{project}/datasets/#{dataset}/tables/#{id}",
+      table_reference: API::TableReference.new(
+        project_id: project,
+        dataset_id: dataset,
+        table_id: id
+      ),
+      friendly_name: name,
+      description: description,
+      schema: API::TableSchema.new(
+        fields: [
+          API::TableFieldSchema.new(
+            name: "name",
+            type: "STRING",
+            mode: "NULLABLE"
+          ),
+          API::TableFieldSchema.new(
+            name: "age",
+            type: "INTEGER",
+            mode: "NULLABLE"
+          ),
+          API::TableFieldSchema.new(
+            name: "score",
+            type: "FLOAT",
+            mode: "NULLABLE"
+          ),
+          API::TableFieldSchema.new(
+            name: "active",
+            type: "BOOLEAN",
+            mode: "NULLABLE"
+          )
         ]
-      },
-      "creationTime" => (Time.now.to_f * 1000).floor,
-      "expirationTime" => (Time.now.to_f * 1000).floor,
-      "lastModifiedTime" => (Time.now.to_f * 1000).floor,
-      "type" => "VIEW",
-      "view" => {
-        "query" => "SELECT name, age, score, active FROM [external:publicdata.users]"
-      },
-      "location" => "US"
-    }
+      ),
+      creation_time: (Time.now.to_f * 1000).floor,
+      expiration_time: (Time.now.to_f * 1000).floor,
+      last_modified_time: (Time.now.to_f * 1000).floor,
+      type: "VIEW",
+      view: API::ViewDefinition.new(
+        query: "SELECT name, age, score, active FROM [external:publicdata.users]"
+      ),
+      location: "US"
+    )
   end
 
-  def random_view_small_hash dataset, id = nil, name = nil
+  def random_view_small_gapi dataset, id = nil, name = nil
     id ||= "my_view"
     name ||= "View Name"
 
-    {
-      "kind" => "bigquery#table",
-      "id" => "#{project}:#{dataset}.#{id}",
-      "tableReference" => {
-        "projectId" => project,
-        "datasetId" => dataset,
-        "tableId" => id
-      },
-      "friendlyName" => name,
-      "type" => "VIEW"
-    }
+    API::Table.new(
+      kind: "bigquery#table",
+      id: "#{project}:#{dataset}.#{id}",
+      table_reference: API::TableReference.new(
+        project_id: project,
+        dataset_id: dataset,
+        table_id: id
+      ),
+      friendly_name: name,
+      type: "VIEW"
+    )
   end
 
-  def random_job_hash id = "1234567890", state = "running"
-    {
-      "kind" => "bigquery#job",
-      "etag" => "etag",
-      "id" => "#{project}:#{id}",
-      "selfLink" => "http://bigquery/projects/#{project}/jobs/#{id}",
-      "jobReference" => {
-        "projectId" => project,
-        "jobId" => id
-      },
-      "configuration" => {
+  def random_job_gapi id = "1234567890", state = "running"
+    API::Job.new(
+      kind: "bigquery#job",
+      etag: "etag",
+      id: "#{project}:#{id}",
+      self_link: "http://bigquery/projects/#{project}/jobs/#{id}",
+      job_reference: API::JobReference.new(
+        project_id: project,
+        job_id: id
+      ),
+      configuration: API::JobConfiguration.new(
         # config call goes here
-        "dryRun" => false
-      },
-      "status" => {
-        "state" => state,
-        "errorResult" => nil,
-        "errors" => nil
-      },
-      "statistics" => {
-        "creationTime" => (Time.now.to_f * 1000).floor,
-        "startTime" => (Time.now.to_f * 1000).floor,
-        "endTime" => (Time.now.to_f * 1000).floor
-      },
-      "user_email" => "user@example.com"
-    }
+        dry_run: false
+      ),
+      status: API::JobStatus.new(
+        state: state,
+        error_result: nil,
+        errors: nil
+      ),
+      statistics: API::JobStatistics.new(
+        creation_time: (Time.now.to_f * 1000).floor,
+        start_time: (Time.now.to_f * 1000).floor,
+        end_time: (Time.now.to_f * 1000).floor
+      ),
+      user_email: "user@example.com"
+    )
   end
 
   def query_data_json
-    query_data_hash.to_json
+    query_data_gapi.to_json
   end
 
-  def query_data_hash
-    {
-      "kind" => "bigquery#getQueryResultsResponse",
-      "etag" => "etag1234567890",
-      "jobReference" => {
-        "projectId" => project,
-        "jobId" => "job9876543210"
-      },
-      "schema" => {
-        "fields" => [
-          {
-            "name" => "name",
-            "type" => "STRING",
-            "mode" => "NULLABLE"
-          },
-          {
-            "name" => "age",
-            "type" => "INTEGER",
-            "mode" => "NULLABLE"
-          },
-          {
-            "name" => "score",
-            "type" => "FLOAT",
-            "mode" => "NULLABLE"
-          },
-          {
-            "name" => "active",
-            "type" => "BOOLEAN",
-            "mode" => "NULLABLE"
-          }
+  def query_data_gapi
+    API::GetQueryResultsResponse.new(
+      kind: "bigquery#getQueryResultsResponse",
+      etag: "etag1234567890",
+      job_reference: API::JobReference.new(
+        project_id: project,
+        job_id: "job9876543210"
+      ),
+      schema: API::TableSchema.new(
+        fields: [
+          API::TableFieldSchema.new(
+            name: "name",
+            type: "STRING",
+            mode: "NULLABLE"
+          ),
+          API::TableFieldSchema.new(
+            name: "age",
+            type: "INTEGER",
+            mode: "NULLABLE"
+          ),
+          API::TableFieldSchema.new(
+            name: "score",
+            type: "FLOAT",
+            mode: "NULLABLE"
+          ),
+          API::TableFieldSchema.new(
+            name: "active",
+            type: "BOOLEAN",
+            mode: "NULLABLE"
+          )
         ]
-      },
-      "rows" => [
-        {
-          "f" => [
-            {
-              "v" => "Heidi"
-            },
-            {
-              "v" => "36"
-            },
-            {
-              "v" => "7.65"
-            },
-            {
-              "v" => "true"
-            }
+      ),
+      rows: [
+        API::TableRow.new(
+          f: [
+            API::TableCell.new(
+              v: "Heidi"
+            ),
+            API::TableCell.new(
+              v: "36"
+            ),
+            API::TableCell.new(
+              v: "7.65"
+            ),
+            API::TableCell.new(
+              v: "true"
+            )
           ]
-        },
-        {
-          "f" => [
-            {
-              "v" => "Aaron"
-            },
-            {
-              "v" => "42"
-            },
-            {
-              "v" => "8.15"
-            },
-            {
-              "v" => "false"
-            }
+        ),
+        API::TableRow.new(
+          f: [
+            API::TableCell.new(
+              v: "Aaron"
+            ),
+            API::TableCell.new(
+              v: "42"
+            ),
+            API::TableCell.new(
+              v: "8.15"
+            ),
+            API::TableCell.new(
+              v: "false"
+            )
           ]
-        },
-        {
-          "f" => [
-            {
-              "v" => "Sally"
-            },
-            {
-              "v" => nil
-            },
-            {
-              "v" => nil
-            },
-            {
-              "v" => nil
-            }
+        ),
+        API::TableRow.new(
+          f: [
+            API::TableCell.new(
+              v: "Sally"
+            ),
+            API::TableCell.new(
+              v: nil
+            ),
+            API::TableCell.new(
+              v: nil
+            ),
+            API::TableCell.new(
+              v: nil
+            )
           ]
-        }
+        )
       ],
-      "pageToken" => "token1234567890",
-      "totalRows" => 3,
-      "totalBytesProcessed" => 456789,
-      "jobComplete" => true,
-      "cacheHit" => false
-    }
+      page_token: "token1234567890",
+      total_rows: 3,
+      total_bytes_processed: 456789,
+      job_complete: true,
+      cache_hit: false
+    )
   end
 
   # Register this spec type for when :bigquery is used.

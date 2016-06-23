@@ -18,7 +18,7 @@ require "uri"
 
 describe Gcloud::Bigquery::LoadJob, :mock_bigquery do
   let(:job) { Gcloud::Bigquery::Job.from_gapi load_job_hash,
-                                              bigquery.connection }
+                                              bigquery.service }
   let(:job_id) { job.job_id }
 
   it "knows it is load job" do
@@ -75,61 +75,51 @@ describe Gcloud::Bigquery::LoadJob, :mock_bigquery do
   it "knows its load config" do
     job.config.must_be_kind_of Hash
     job.config["load"]["destinationTable"]["tableId"].must_equal "target_table_id"
-    job.config["load"]["createDisposition"].must_equal "CREATE_IF_NEEDED"
+    job.config["load"]["create_disposition"].must_equal "CREATE_IF_NEEDED"
     job.config["load"]["encoding"].must_equal "UTF-8"
   end
 
   def load_job_hash
-    hash = random_job_hash
+    hash = random_job_gapi
     hash["configuration"]["load"] = {
-      "sourceUris" => ["gs://bucket/file.ext"],
-      "destinationTable" => {
-        "projectId" => "target_project_id",
-        "datasetId" => "target_dataset_id",
+      sourceUris: ["gs://bucket/file.ext"],
+      destinationTable: {
+        projectId: "target_project_id",
+        datasetId: "target_dataset_id",
         "tableId"   => "target_table_id"
       },
-      "createDisposition" => "CREATE_IF_NEEDED",
-      "writeDisposition" => "WRITE_EMPTY",
-      "schema" => {
-        "fields" => [
-          { "name" => "name",
-            "type" => "STRING",
-            "mode" => "NULLABLE" },
-          { "name" => "age",
-            "type" => "INTEGER",
-            "mode" => "NULLABLE" },
-          { "name" => "score",
-            "type" => "FLOAT",
-            "mode" => "NULLABLE" },
-          { "name" => "active",
-            "type" => "BOOLEAN",
-            "mode" => "NULLABLE" }]},
-      "fieldDelimiter" => ",",
-      "skipLeadingRows" => 0,
-      "encoding" => "UTF-8",
-      "quote" => "\"",
-      "maxBadRecords" => 0,
-      "allowQuotedNewlines" => true,
-      "sourceFormat" => "NEWLINE_DELIMITED_JSON",
-      "allowJaggedRows" => true,
-      "ignoreUnknownValues" => true
+      create_disposition: "CREATE_IF_NEEDED",
+      write_disposition: "WRITE_EMPTY",
+      schema: {
+        fields: [
+          { name: "name",
+            type: "STRING",
+            mode: "NULLABLE" },
+          { name: "age",
+            type: "INTEGER",
+            mode: "NULLABLE" },
+          { name: "score",
+            type: "FLOAT",
+            mode: "NULLABLE" },
+          { name: "active",
+            type: "BOOLEAN",
+            mode: "NULLABLE" }]},
+      fieldDelimiter: ",",
+      skipLeadingRows: 0,
+      encoding: "UTF-8",
+      quote: "\"",
+      maxBadRecords: 0,
+      allowQuotedNewlines: true,
+      sourceFormat: "NEWLINE_DELIMITED_JSON",
+      allowJaggedRows: true,
+      ignoreUnknownValues: true
     }
     hash["statistics"]["load"] = {
-      "inputFiles" => 3,
-      "inputFileBytes" => 456,
-      "outputRows" => 5,
-      "outputBytes" => 789
+      inputFiles: 3,
+      inputFileBytes: 456,
+      outputRows: 5,
+      outputBytes: 789
     }
     hash
-  end
-
-  def destination_table_json
-    hash = random_table_hash "getting_replaced_dataset_id"
-    hash["tableReference"] = {
-      "projectId" => "target_project_id",
-      "datasetId" => "target_dataset_id",
-      "tableId"   => "target_table_id"
-    }
-    hash.to_json
   end
 end

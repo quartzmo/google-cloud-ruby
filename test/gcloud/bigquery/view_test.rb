@@ -25,9 +25,9 @@ describe Gcloud::Bigquery::View, :mock_bigquery do
   let(:etag) { "etag123456789" }
   let(:location_code) { "US" }
   let(:api_url) { "http://googleapi/bigquery/v2/projects/#{project}/datasets/#{dataset}/tables/#{table_id}" }
-  let(:view_hash) { random_view_hash dataset, table_id, table_name, description }
+  let(:view_hash) { random_view_gapi dataset, table_id, table_name, description }
   let(:view) { Gcloud::Bigquery::View.from_gapi view_hash,
-                                                bigquery.connection }
+                                                bigquery.service }
 
   it "knows its attributes" do
     view.name.must_equal table_name
@@ -74,7 +74,7 @@ describe Gcloud::Bigquery::View, :mock_bigquery do
     new_description = "New description of the view."
     mock_connection.get "/bigquery/v2/projects/#{project}/datasets/#{view.dataset_id}/tables/#{view.table_id}" do |env|
       [200, {"Content-Type"=>"application/json"},
-       random_view_hash(dataset, table_id, table_name, new_description).to_json]
+       random_view_gapi(dataset, table_id, table_name, new_description).to_json]
     end
 
     view.description.must_equal description

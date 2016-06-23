@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+require "google/apis/bigquery_v2"
+
 module Gcloud
   module Bigquery
     class Table
@@ -55,7 +57,7 @@ module Gcloud
         ##
         # @private  Initializes a new schema object with an existing schema.
         def initialize schema = nil, nested = false
-          fields = (schema && schema["fields"]) || []
+          fields = (schema && schema.fields) || []
           @original_fields = fields.dup
           @fields = fields.dup
           @nested = nested
@@ -218,14 +220,14 @@ module Gcloud
         def add_field name, type, nested_fields, description: nil,
                       mode: :nullable
           # Remove any existing field of this name
-          @fields.reject! { |h| h["name"] == name }
-          field = {
-            "name" => name,
-            "type" => upcase_type(type)
-          }
-          field["fields"]      = nested_fields     if nested_fields
-          field["description"] = description       if description
-          field["mode"]        = upcase_mode(mode) if mode
+          @fields.reject! { |h| h.name == name }
+          field = Google::Apis::BigqueryV2::TableFieldSchema.new(
+            name: name,
+            type: upcase_type(type)
+          )
+          field.fields      = nested_fields     if nested_fields
+          field.description = description       if description
+          field.mode        = upcase_mode(mode) if mode
           @fields << field
         end
       end

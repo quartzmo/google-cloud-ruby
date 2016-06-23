@@ -18,29 +18,29 @@ require "uri"
 
 describe Gcloud::Bigquery::Job, :mock_bigquery do
   # Create a job object with the project's mocked connection object
-  let(:job_hash) { random_job_hash }
+  let(:job_hash) { random_job_gapi }
   let(:job) { Gcloud::Bigquery::Job.from_gapi job_hash,
-                                              bigquery.connection }
+                                              bigquery.service }
   let(:job_id) { job.job_id }
 
   let(:failed_job_hash) do
-    hash = random_job_hash "1234567890", "DONE"
+    hash = random_job_gapi "1234567890", "DONE"
     hash["status"]["errorResult"] = {
       "reason"    => "r34s0n",
       "location"  => "l0c4t10n",
-      "debugInfo" => "d3bugInf0",
+      debugInfo: "d3bugInf0",
       "message"   => "m3ss4g3"
     }
     hash["status"]["errors"] = [{
       "reason"    => "r34s0n",
       "location"  => "l0c4t10n",
-      "debugInfo" => "d3bugInf0",
+      debugInfo: "d3bugInf0",
       "message"   => "m3ss4g3"
     }]
     hash
   end
   let(:failed_job) { Gcloud::Bigquery::Job.from_gapi failed_job_hash,
-                                              bigquery.connection }
+                                              bigquery.service }
   let(:failed_job_id) { failed_job.job_id }
 
   it "knows its attributes" do
@@ -157,7 +157,7 @@ describe Gcloud::Bigquery::Job, :mock_bigquery do
   it "can reload itself" do
     mock_connection.get "/bigquery/v2/projects/#{project}/jobs/#{job_id}" do |env|
       [200, {"Content-Type"=>"application/json"},
-       random_job_hash(job_id, "done").to_json]
+       random_job_gapi(job_id, "done").to_json]
     end
 
     job.must_be :running?
@@ -168,23 +168,23 @@ describe Gcloud::Bigquery::Job, :mock_bigquery do
   it "can wait until done" do
     mock_connection.get "/bigquery/v2/projects/#{project}/jobs/#{job_id}" do |env|
       [200, {"Content-Type"=>"application/json"},
-       random_job_hash(job_id, "pending").to_json]
+       random_job_gapi(job_id, "pending").to_json]
     end
     mock_connection.get "/bigquery/v2/projects/#{project}/jobs/#{job_id}" do |env|
       [200, {"Content-Type"=>"application/json"},
-       random_job_hash(job_id, "pending").to_json]
+       random_job_gapi(job_id, "pending").to_json]
     end
     mock_connection.get "/bigquery/v2/projects/#{project}/jobs/#{job_id}" do |env|
       [200, {"Content-Type"=>"application/json"},
-       random_job_hash(job_id, "running").to_json]
+       random_job_gapi(job_id, "running").to_json]
     end
     mock_connection.get "/bigquery/v2/projects/#{project}/jobs/#{job_id}" do |env|
       [200, {"Content-Type"=>"application/json"},
-       random_job_hash(job_id, "running").to_json]
+       random_job_gapi(job_id, "running").to_json]
     end
     mock_connection.get "/bigquery/v2/projects/#{project}/jobs/#{job_id}" do |env|
       [200, {"Content-Type"=>"application/json"},
-       random_job_hash(job_id, "done").to_json]
+       random_job_gapi(job_id, "done").to_json]
     end
 
     # mock out the sleep method so the test doesn't actually block
@@ -199,7 +199,7 @@ describe Gcloud::Bigquery::Job, :mock_bigquery do
   it "can re-run itself" do
     mock_connection.post "/bigquery/v2/projects/#{project}/jobs" do |env|
       [200, {"Content-Type"=>"application/json"},
-       random_job_hash(job_id + "-rerun").to_json]
+       random_job_gapi(job_id + "-rerun").to_json]
     end
 
     new_job = job.rerun!

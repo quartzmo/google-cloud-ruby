@@ -41,7 +41,7 @@ module Gcloud
       end
 
       # @private
-      def self.from_response resp
+      def self.from_gapi resp
         if resp.data? && resp.data["error"]
           from_response_data resp.data["error"]
         else

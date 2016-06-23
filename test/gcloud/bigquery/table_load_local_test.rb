@@ -19,12 +19,12 @@ describe Gcloud::Bigquery::Table, :load, :local, :mock_bigquery do
   let(:table_id) { "table_id" }
   let(:table_name) { "Target Table" }
   let(:description) { "This is the target table" }
-  let(:table_hash) { random_table_hash dataset,
+  let(:table_hash) { random_table_gapi dataset,
                                        table_id,
                                        table_name,
                                        description }
   let(:table) { Gcloud::Bigquery::Table.from_gapi table_hash,
-                                                  bigquery.connection }
+                                                  bigquery.service }
 
   it "can upload a csv file" do
     mock_connection.post "/upload/bigquery/v2/projects/#{project}/jobs" do |env|
@@ -33,8 +33,8 @@ describe Gcloud::Bigquery::Table, :load, :local, :mock_bigquery do
       json["configuration"]["load"]["destinationTable"]["projectId"].must_equal table.project_id
       json["configuration"]["load"]["destinationTable"]["datasetId"].must_equal table.dataset_id
       json["configuration"]["load"]["destinationTable"]["tableId"].must_equal table.table_id
-      json["configuration"]["load"].wont_include "createDisposition"
-      json["configuration"]["load"].wont_include "writeDisposition"
+      json["configuration"]["load"].wont_include "create_disposition"
+      json["configuration"]["load"].wont_include "write_disposition"
       json["configuration"]["load"]["sourceFormat"].must_equal "CSV"
       json["configuration"]["load"].wont_include "allowJaggedRows"
       json["configuration"]["load"].wont_include "allowQuotedNewlines"
@@ -63,8 +63,8 @@ describe Gcloud::Bigquery::Table, :load, :local, :mock_bigquery do
       json["configuration"]["load"]["destinationTable"]["projectId"].must_equal table.project_id
       json["configuration"]["load"]["destinationTable"]["datasetId"].must_equal table.dataset_id
       json["configuration"]["load"]["destinationTable"]["tableId"].must_equal table.table_id
-      json["configuration"]["load"].wont_include "createDisposition"
-      json["configuration"]["load"].wont_include "writeDisposition"
+      json["configuration"]["load"].wont_include "create_disposition"
+      json["configuration"]["load"].wont_include "write_disposition"
       json["configuration"]["load"]["sourceFormat"].must_equal "CSV"
       json["configuration"]["load"]["allowJaggedRows"].must_equal true
       json["configuration"]["load"]["allowQuotedNewlines"].must_equal true
@@ -95,8 +95,8 @@ describe Gcloud::Bigquery::Table, :load, :local, :mock_bigquery do
       json["configuration"]["load"]["destinationTable"]["projectId"].must_equal table.project_id
       json["configuration"]["load"]["destinationTable"]["datasetId"].must_equal table.dataset_id
       json["configuration"]["load"]["destinationTable"]["tableId"].must_equal table.table_id
-      json["configuration"]["load"].wont_include "createDisposition"
-      json["configuration"]["load"].wont_include "writeDisposition"
+      json["configuration"]["load"].wont_include "create_disposition"
+      json["configuration"]["load"].wont_include "write_disposition"
       json["configuration"]["load"]["sourceFormat"].must_equal "NEWLINE_DELIMITED_JSON"
       json["configuration"]["load"].wont_include "allowJaggedRows"
       json["configuration"]["load"].wont_include "allowQuotedNewlines"
@@ -125,8 +125,8 @@ describe Gcloud::Bigquery::Table, :load, :local, :mock_bigquery do
       json["configuration"]["load"]["destinationTable"]["projectId"].must_equal table.project_id
       json["configuration"]["load"]["destinationTable"]["datasetId"].must_equal table.dataset_id
       json["configuration"]["load"]["destinationTable"]["tableId"].must_equal table.table_id
-      json["configuration"]["load"].wont_include "createDisposition"
-      json["configuration"]["load"].wont_include "writeDisposition"
+      json["configuration"]["load"].wont_include "create_disposition"
+      json["configuration"]["load"].wont_include "write_disposition"
       json["configuration"]["load"]["sourceFormat"].must_equal "NEWLINE_DELIMITED_JSON"
       json["configuration"]["load"].wont_include "allowJaggedRows"
       json["configuration"]["load"].wont_include "allowQuotedNewlines"
@@ -217,13 +217,13 @@ describe Gcloud::Bigquery::Table, :load, :local, :mock_bigquery do
   end
 
   def load_job_json table, load_url
-    hash = random_job_hash
+    hash = random_job_gapi
     hash["configuration"]["load"] = {
-      "sourceUriss" => [load_url],
-      "destinationTable" => {
-        "projectId" => table.project_id,
-        "datasetId" => table.dataset_id,
-        "tableId" => table.table_id
+      source_uris: [load_url],
+      destinationTable: {
+        projectId: table.project_id,
+        datasetId: table.dataset_id,
+        tableId: table.table_id
       },
     }
     hash.to_json

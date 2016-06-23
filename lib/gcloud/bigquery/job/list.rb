@@ -74,14 +74,10 @@ module Gcloud
         #   end
         def next
           return nil unless next?
-          ensure_connection!
+          ensure_service!
           options = { all: @hidden, token: token, max: @max, filter: @filter }
-          resp = @connection.list_jobs options
-          if resp.success?
-            self.class.from_response resp, @connection, @hidden, @max, @filter
-          else
-            fail ApiError.from_response(resp)
-          end
+          gapi = @service.list_jobs options
+          self.class.from_gapi gapi, @service, @hidden, @max, @filter
         end
 
         ##
@@ -151,14 +147,16 @@ module Gcloud
 
         ##
         # @private New Job::List from a response object.
-        def self.from_response resp, conn, hidden = nil, max = nil, filter = nil
-          jobs = List.new(Array(resp.data["jobs"]).map do |gapi_object|
+        def self.from_gapi gapi, conn, hidden = nil, max = nil, filter = nil
+          jobs = List.new(Array(gapi.jobs).map do |gapi_object|
             Job.from_gapi gapi_object, conn
           end)
-          jobs.instance_variable_set "@token", resp.data["nextPageToken"]
-          jobs.instance_variable_set "@etag",  resp.data["etag"]
-          jobs.instance_variable_set "@total", resp.data["totalItems"]
-          jobs.instance_variable_set "@connection", conn
+          jobs.instance_variable_set "@token", gapi.next_page_token
+          jobs.instance_variable_set "@etag",  gapi.etag
+          # TODO: Deprecate :total, above, which must have been a c/p error
+          # from Table or Project list response, doesn't exist here.
+          # jobs.instance_variable_set "@total", gapi.total_items
+          jobs.instance_variable_set "@service", conn
           jobs.instance_variable_set "@hidden",     hidden
           jobs.instance_variable_set "@max",        max
           jobs.instance_variable_set "@filter",     filter
@@ -169,8 +167,8 @@ module Gcloud
 
         ##
         # Raise an error unless an active connection is available.
-        def ensure_connection!
-          fail "Must have active connection" unless @connection
+        def ensure_service!
+          fail "Must have active connection" unless @service
         end
       end
     end

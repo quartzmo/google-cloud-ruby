@@ -15,8 +15,8 @@
 require "helper"
 
 describe Gcloud::Bigquery::QueryData, :mock_bigquery do
-  let(:query_data) { Gcloud::Bigquery::QueryData.from_gapi query_data_hash,
-                                                           bigquery.connection }
+  let(:query_data) { Gcloud::Bigquery::QueryData.from_gapi query_data_gapi,
+                                                           bigquery.service }
 
   it "returns data as a list of hashes" do
     query_data.count.must_equal 3
@@ -78,7 +78,7 @@ describe Gcloud::Bigquery::QueryData, :mock_bigquery do
   it "can get the job associated with the data" do
     mock_connection.get "/bigquery/v2/projects/#{project}/jobs/job9876543210" do |env|
       [200, {"Content-Type"=>"application/json"},
-       random_job_hash("job9876543210").to_json]
+       random_job_gapi("job9876543210").to_json]
     end
 
     job = query_data.job
@@ -89,7 +89,7 @@ describe Gcloud::Bigquery::QueryData, :mock_bigquery do
   it "memoizes the job associated with the data" do
     mock_connection.get "/bigquery/v2/projects/#{project}/jobs/job9876543210" do |env|
       [200, {"Content-Type"=>"application/json"},
-       random_job_hash("job9876543210").to_json]
+       random_job_gapi("job9876543210").to_json]
     end
 
     job = query_data.job
@@ -112,7 +112,7 @@ describe Gcloud::Bigquery::QueryData, :mock_bigquery do
 
   it "handles missing rows and fields" do
     nil_query_data = Gcloud::Bigquery::QueryData.from_gapi nil_query_data_hash,
-                                                           bigquery.connection
+                                                           bigquery.service
 
     nil_query_data.class.must_equal Gcloud::Bigquery::QueryData
     nil_query_data.count.must_equal 0
@@ -120,21 +120,21 @@ describe Gcloud::Bigquery::QueryData, :mock_bigquery do
 
   it "handles empty rows and fields" do
     empty_query_data = Gcloud::Bigquery::QueryData.from_gapi empty_query_data_hash,
-                                                             bigquery.connection
+                                                             bigquery.service
 
     empty_query_data.class.must_equal Gcloud::Bigquery::QueryData
     empty_query_data.count.must_equal 0
   end
 
   def nil_query_data_hash
-    h = query_data_hash
+    h = query_data_gapi
     h.delete "rows"
     h.delete "schema"
     h
   end
 
   def empty_query_data_hash
-    h = query_data_hash
+    h = query_data_gapi
     h["rows"] = []
     h["schema"]["fields"] = []
     h

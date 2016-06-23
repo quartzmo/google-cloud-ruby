@@ -20,9 +20,9 @@ describe Gcloud::Bigquery::Dataset, :update, :mock_bigquery do
   let(:dataset_name) { "My Dataset" }
   let(:description) { "This is my dataset" }
   let(:default_expiration) { 999 }
-  let(:dataset_hash) { random_dataset_hash dataset_id, dataset_name, description, default_expiration }
+  let(:dataset_hash) { random_dataset_gapi dataset_id, dataset_name, description, default_expiration }
   let(:dataset) { Gcloud::Bigquery::Dataset.from_gapi dataset_hash,
-                                                      bigquery.connection }
+                                                      bigquery.service }
 
   it "updates its name" do
     new_dataset_name = "My Updated Dataset"
@@ -31,7 +31,7 @@ describe Gcloud::Bigquery::Dataset, :update, :mock_bigquery do
       json = JSON.parse env.body
       json["friendlyName"].must_equal new_dataset_name
       [200, {"Content-Type"=>"application/json"},
-       random_dataset_hash(dataset_id, new_dataset_name, description, default_expiration).to_json]
+       random_dataset_gapi(dataset_id, new_dataset_name, description, default_expiration).to_json]
     end
 
     dataset.name.must_equal dataset_name
@@ -52,7 +52,7 @@ describe Gcloud::Bigquery::Dataset, :update, :mock_bigquery do
       json = JSON.parse env.body
       json["description"].must_equal new_description
       [200, {"Content-Type"=>"application/json"},
-       random_dataset_hash(dataset_id, dataset_name, new_description, default_expiration).to_json]
+       random_dataset_gapi(dataset_id, dataset_name, new_description, default_expiration).to_json]
     end
 
     dataset.name.must_equal dataset_name
@@ -73,7 +73,7 @@ describe Gcloud::Bigquery::Dataset, :update, :mock_bigquery do
       json = JSON.parse env.body
       json["defaultTableExpirationMs"].must_equal new_default_expiration
       [200, {"Content-Type"=>"application/json"},
-       random_dataset_hash(dataset_id, dataset_name, description, new_default_expiration).to_json]
+       random_dataset_gapi(dataset_id, dataset_name, description, new_default_expiration).to_json]
     end
 
     dataset.name.must_equal dataset_name

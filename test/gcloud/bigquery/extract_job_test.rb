@@ -18,7 +18,7 @@ require "uri"
 
 describe Gcloud::Bigquery::ExtractJob, :mock_bigquery do
   let(:job) { Gcloud::Bigquery::Job.from_gapi extract_job_hash,
-                                              bigquery.connection }
+                                              bigquery.service }
   let(:job_id) { job.job_id }
 
   it "knows it is extract job" do
@@ -72,30 +72,30 @@ describe Gcloud::Bigquery::ExtractJob, :mock_bigquery do
   end
 
   def extract_job_hash
-    hash = random_job_hash
+    hash = random_job_gapi
     hash["configuration"]["extract"] = {
-      "destinationUris" => ["gs://bucket/file-*.ext"],
-      "sourceTable" => {
-        "projectId" => "source_project_id",
-        "datasetId" => "source_dataset_id",
+      destinationUris: ["gs://bucket/file-*.ext"],
+      sourceTable: {
+        projectId: "source_project_id",
+        datasetId: "source_dataset_id",
         "tableId"   => "source_table_id"
       },
-      "compression" => "GZIP",
-      "destinationFormat" => "NEWLINE_DELIMITED_JSON",
-      "fieldDelimiter" => ",",
-      "printHeader" => true
+      compression: "GZIP",
+      destinationFormat: "NEWLINE_DELIMITED_JSON",
+      fieldDelimiter: ",",
+      printHeader: true
     }
     hash["statistics"]["extract"] = {
-      "destinationUriFileCounts" => [123]
+      destinationUriFileCounts: [123]
     }
     hash
   end
 
   def source_table_json
-    hash = random_table_hash "getting_replaced_dataset_id"
+    hash = random_table_gapi "getting_replaced_dataset_id"
     hash["tableReference"] = {
-      "projectId" => "source_project_id",
-      "datasetId" => "source_dataset_id",
+      projectId: "source_project_id",
+      datasetId: "source_dataset_id",
       "tableId"   => "source_table_id"
     }
     hash.to_json

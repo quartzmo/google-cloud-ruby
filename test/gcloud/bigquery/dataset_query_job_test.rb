@@ -17,9 +17,9 @@ require "helper"
 describe Gcloud::Bigquery::Dataset, :query_job, :mock_bigquery do
   let(:query) { "SELECT name, age, score, active FROM [some_project:some_dataset.users]" }
   let(:dataset_id) { "my_dataset" }
-  let(:dataset_hash) { random_dataset_hash dataset_id }
+  let(:dataset_hash) { random_dataset_gapi dataset_id }
   let(:dataset) { Gcloud::Bigquery::Dataset.from_gapi dataset_hash,
-                                                      bigquery.connection }
+                                                      bigquery.service }
 
   it "queries the data with default dataset option set" do
     mock_connection.post "/bigquery/v2/projects/#{project}/jobs" do |env|
@@ -37,24 +37,24 @@ describe Gcloud::Bigquery::Dataset, :query_job, :mock_bigquery do
   end
 
   def query_job_json query
-    hash = random_job_hash
+    hash = random_job_gapi
     hash["configuration"]["query"] = {
-      "query" => query,
-      # "defaultDataset" => {
-      #   "datasetId" => string,
-      #   "projectId" => string
+      query: query,
+      # defaultDataset: {
+      #   datasetId: string,
+      #   projectId: string
       # },
-      # "destinationTable" => {
-      #   "projectId" => string,
-      #   "datasetId" => string,
-      #   "tableId" => string
+      # destinationTable: {
+      #   projectId: string,
+      #   datasetId: string,
+      #   tableId: string
       # },
-      "createDisposition" => "CREATE_IF_NEEDED",
-      "writeDisposition" => "WRITE_EMPTY",
-      "priority" => "INTERACTIVE",
-      "allowLargeResults" => true,
-      "useQueryCache" => true,
-      "flattenResults" => true
+      create_disposition: "CREATE_IF_NEEDED",
+      write_disposition: "WRITE_EMPTY",
+      priority: "INTERACTIVE",
+      allow_large_results: true,
+      use_query_cache: true,
+      flatten_results: true
     }
     hash.to_json
   end

@@ -19,9 +19,9 @@ describe Gcloud::Bigquery::Data, :mock_bigquery do
   let(:table_id) { "my_table" }
   let(:table_name) { "My Table" }
   let(:description) { "This is my table" }
-  let(:table_hash) { random_table_hash dataset_id, table_id, table_name, description }
+  let(:table_hash) { random_table_gapi dataset_id, table_id, table_name, description }
   let(:table) { Gcloud::Bigquery::Table.from_gapi table_hash,
-                                                  bigquery.connection }
+                                                  bigquery.service }
 
   it "returns data as a list of hashes" do
     mock_connection.get "/bigquery/v2/projects/#{project}/datasets/#{dataset_id}/tables/#{table_id}/data" do |env|
@@ -282,60 +282,60 @@ describe Gcloud::Bigquery::Data, :mock_bigquery do
 
   def table_data_hash token: "token1234567890"
     {
-      "kind" => "bigquery#tableDataList",
-      "etag" => "etag1234567890",
-      "rows" => [
+      kind: "bigquery#tableDataList",
+      etag: "etag1234567890",
+      rows: [
         {
-          "f" => [
+          f: [
             {
-              "v" => "Heidi"
+              v: "Heidi"
             },
             {
-              "v" => "36"
+              v: "36"
             },
             {
-              "v" => "7.65"
+              v: "7.65"
             },
             {
-              "v" => "true"
+              v: "true"
             }
           ]
         },
         {
-          "f" => [
+          f: [
             {
-              "v" => "Aaron"
+              v: "Aaron"
             },
             {
-              "v" => "42"
+              v: "42"
             },
             {
-              "v" => "8.15"
+              v: "8.15"
             },
             {
-              "v" => "false"
+              v: "false"
             }
           ]
         },
         {
-          "f" => [
+          f: [
             {
-              "v" => "Sally"
+              v: "Sally"
             },
             {
-              "v" => nil
+              v: nil
             },
             {
-              "v" => nil
+              v: nil
             },
             {
-              "v" => nil
+              v: nil
             }
           ]
         }
       ],
-      "pageToken" => token,
-      "totalRows" => 3
+      pageToken: token,
+      totalRows: 3
     }
   end
 

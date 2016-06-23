@@ -22,7 +22,7 @@ require "digest/md5"
 module Gcloud
   module Bigquery
     ##
-    # @private Represents the connection to Bigquery,
+    # @private Represents the service to Bigquery,
     # as well as expose the API calls.
     class Connection
       API_VERSION = "v2"

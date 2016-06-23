@@ -71,14 +71,10 @@ module Gcloud
         #   end
         def next
           return nil unless next?
-          ensure_connection!
+          ensure_service!
           options = { all: @hidden, token: token, max: @max }
-          resp = @connection.list_datasets options
-          if resp.success?
-            self.class.from_response resp, @connection
-          else
-            fail ApiError.from_response(resp)
-          end
+          gapi = @service.list_datasets options
+          self.class.from_gapi gapi, @service
         end
 
         ##
@@ -148,13 +144,13 @@ module Gcloud
 
         ##
         # @private New Dataset::List from a response object.
-        def self.from_response resp, conn, hidden = nil, max = nil
-          datasets = List.new(Array(resp.data["datasets"]).map do |gapi_object|
+        def self.from_gapi gapi, conn, hidden = nil, max = nil
+          datasets = List.new(Array(gapi.datasets).map do |gapi_object|
             Dataset.from_gapi gapi_object, conn
           end)
-          datasets.instance_variable_set "@token", resp.data["nextPageToken"]
-          datasets.instance_variable_set "@etag",  resp.data["etag"]
-          datasets.instance_variable_set "@connection", conn
+          datasets.instance_variable_set "@token", gapi.next_page_token
+          datasets.instance_variable_set "@etag",  gapi.etag
+          datasets.instance_variable_set "@service", conn
           datasets.instance_variable_set "@hidden",     hidden
           datasets.instance_variable_set "@max",        max
           datasets
@@ -164,8 +160,8 @@ module Gcloud
 
         ##
         # Raise an error unless an active connection is available.
-        def ensure_connection!
-          fail "Must have active connection" unless @connection
+        def ensure_service!
+          fail "Must have active connection" unless @service
         end
       end
     end

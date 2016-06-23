@@ -14,7 +14,7 @@
 
 
 require "gcloud/gce"
-require "gcloud/bigquery/connection"
+require "gcloud/bigquery/service"
 require "gcloud/bigquery/credentials"
 require "gcloud/bigquery/errors"
 require "gcloud/bigquery/dataset"
@@ -46,17 +46,17 @@ module Gcloud
     #
     class Project
       ##
-      # @private The Connection object.
-      attr_accessor :connection
+      # @private The Service object.
+      attr_accessor :service
 
       ##
-      # Creates a new Connection instance.
+      # Creates a new Service instance.
       #
       # See {Gcloud.bigquery}
       def initialize project, credentials
         project = project.to_s # Always cast to a string
         fail ArgumentError, "project is missing" if project.empty?
-        @connection = Connection.new project, credentials
+        @service = Service.new project, credentials
       end
 
       ##
@@ -71,7 +71,7 @@ module Gcloud
       #   bigquery.project #=> "my-todo-project"
       #
       def project
-        connection.project
+        service.project
       end
 
       ##
@@ -148,16 +148,12 @@ module Gcloud
       def query_job query, priority: "INTERACTIVE", cache: true, table: nil,
                     create: nil, write: nil, large_results: nil, flatten: nil,
                     dataset: nil
-        ensure_connection!
+        ensure_service!
         options = { priority: priority, cache: cache, table: table,
                     create: create, write: write, large_results: large_results,
                     flatten: flatten, dataset: dataset }
-        resp = connection.query_job query, options
-        if resp.success?
-          Job.from_gapi resp.data, connection
-        else
-          fail ApiError.from_response(resp)
-        end
+        gapi = service.query_job query, options
+        Job.from_gapi gapi, service
       end
 
       ##
@@ -223,15 +219,11 @@ module Gcloud
       #
       def query query, max: nil, timeout: 10000, dryrun: nil, cache: true,
                 dataset: nil, project: nil
-        ensure_connection!
+        ensure_service!
         options = { max: max, timeout: timeout, dryrun: dryrun, cache: cache,
                     dataset: dataset, project: project }
-        resp = connection.query query, options
-        if resp.success?
-          QueryData.from_gapi resp.data, connection
-        else
-          fail ApiError.from_response(resp)
-        end
+        gapi = service.query query, options
+        QueryData.from_gapi gapi, service
       end
 
       ##
@@ -252,14 +244,12 @@ module Gcloud
       #   puts dataset.name
       #
       def dataset dataset_id
-        ensure_connection!
-        resp = connection.get_dataset dataset_id
-        if resp.success?
-          Dataset.from_gapi resp.data, connection
-        else
-          return nil if resp.status == 404
-          fail ApiError.from_response(resp)
-        end
+        ensure_service!
+        gapi = service.get_dataset dataset_id
+        Dataset.from_gapi gapi, service
+      rescue Google::Apis::ClientError => e
+        raise e unless e.status_code == 404 # TODO: convert e to Gcloud::Error
+        nil
       end
 
       ##
@@ -326,18 +316,17 @@ module Gcloud
       def create_dataset dataset_id, name: nil, description: nil,
                          expiration: nil, access: nil, location: nil
         if block_given?
-          access_builder = Dataset::Access.new connection.default_access_rules,
+          access_builder = Dataset::Access.new service.default_access_rules,
                                                "projectId" => project
           yield access_builder
           access = access_builder.access if access_builder.changed?
         end
 
-        ensure_connection!
+        ensure_service!
         options = { name: name, description: description,
                     expiration: expiration, access: access, location: location }
-        resp = connection.insert_dataset dataset_id, options
-        return Dataset.from_gapi(resp.data, connection) if resp.success?
-        fail ApiError.from_response(resp)
+        gapi = service.insert_dataset dataset_id, options
+        Dataset.from_gapi gapi, service
       end
 
       ##
@@ -383,14 +372,10 @@ module Gcloud
       #   end
       #
       def datasets all: nil, token: nil, max: nil
-        ensure_connection!
+        ensure_service!
         options = { all: all, token: token, max: max }
-        resp = connection.list_datasets options
-        if resp.success?
-          Dataset::List.from_response resp, connection, all, max
-        else
-          fail ApiError.from_response(resp)
-        end
+        gapi = service.list_datasets options
+        Dataset::List.from_gapi gapi, service, all, max
       end
 
       ##
@@ -410,14 +395,12 @@ module Gcloud
       #   job = bigquery.job "my_job"
       #
       def job job_id
-        ensure_connection!
-        resp = connection.get_job job_id
-        if resp.success?
-          Job.from_gapi resp.data, connection
-        else
-          return nil if resp.status == 404
-          fail ApiError.from_response(resp)
-        end
+        ensure_service!
+        gapi = service.get_job job_id
+        Job.from_gapi gapi, service
+      rescue Google::Apis::ClientError => e
+        raise e unless e.status_code == 404 # TODO: convert e to Gcloud::Error
+        nil
       end
 
       ##
@@ -473,22 +456,18 @@ module Gcloud
       #   end
       #
       def jobs all: nil, token: nil, max: nil, filter: nil
-        ensure_connection!
+        ensure_service!
         options = { all: all, token: token, max: max, filter: filter }
-        resp = connection.list_jobs options
-        if resp.success?
-          Job::List.from_response resp, connection, all, max, filter
-        else
-          fail ApiError.from_response(resp)
-        end
+        gapi = service.list_jobs options
+        Job::List.from_gapi gapi, service, all, max, filter
       end
 
       protected
 
       ##
       # Raise an error unless an active connection is available.
-      def ensure_connection!
-        fail "Must have active connection" unless connection
+      def ensure_service!
+        fail "Must have active connection" unless service
       end
     end
   end

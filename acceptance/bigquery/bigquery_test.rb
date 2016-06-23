@@ -14,6 +14,7 @@
 
 require "bigquery_helper"
 require "gcloud/storage"
+require "google/apis/bigquery_v2"
 
 # This test is a ruby version of gcloud-node's bigquery test.
 
@@ -28,12 +29,14 @@ describe Gcloud::Bigquery, :bigquery do
   end
   let(:table_id) { "kittens" }
   let(:schema) do
-    { "fields" => [
-        { "name" => "id",    "type" => "INTEGER" },
-        { "name" => "breed", "type" => "STRING" },
-        { "name" => "name",  "type" => "STRING" },
-        { "name" => "dob",   "type" => "TIMESTAMP" }
-      ] }
+    Google::Apis::BigqueryV2::TableSchema.new(
+      fields: [
+        Google::Apis::BigqueryV2::TableFieldSchema.new(name: "id",    type: "INTEGER"),
+        Google::Apis::BigqueryV2::TableFieldSchema.new(name: "breed", type: "STRING"),
+        Google::Apis::BigqueryV2::TableFieldSchema.new(name: "name",  type: "STRING"),
+        Google::Apis::BigqueryV2::TableFieldSchema.new(name: "dob",   type: "TIMESTAMP")
+      ]
+    )
   end
   let(:table) do
     t = dataset.table table_id
@@ -95,6 +98,7 @@ describe Gcloud::Bigquery, :bigquery do
   describe "BigQuery/Table" do
     let(:local_file) { "acceptance/data/kitten-test-data.json" }
 
+focus
     it "has the correct schema" do
       table.schema.must_equal schema
     end

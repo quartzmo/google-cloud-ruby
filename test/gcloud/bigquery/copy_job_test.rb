@@ -17,8 +17,8 @@ require "json"
 require "uri"
 
 describe Gcloud::Bigquery::CopyJob, :mock_bigquery do
-  let(:job) { Gcloud::Bigquery::Job.from_gapi copy_job_hash,
-                                              bigquery.connection }
+  let(:job) { Gcloud::Bigquery::Job.from_gapi copy_job_gapi,
+                                              bigquery.service }
   let(:job_id) { job.job_id }
 
   it "knows it is copy job" do
@@ -26,25 +26,23 @@ describe Gcloud::Bigquery::CopyJob, :mock_bigquery do
   end
 
   it "knows its copy tables" do
-    mock_connection.get "/bigquery/v2/projects/source_project_id/datasets/source_dataset_id/tables/source_table_id" do |env|
-      [200, {"Content-Type"=>"application/json"},
-       source_table_json]
-    end
+    mock = Minitest::Mock.new
+    bigquery.service.mocked_service = mock
 
-    job.source.must_be_kind_of Gcloud::Bigquery::Table
-    job.source.project_id.must_equal "source_project_id"
-    job.source.dataset_id.must_equal "source_dataset_id"
-    job.source.table_id.must_equal   "source_table_id"
+    mock.expect :get_table, source_table_gapi, ["source_project_id", "source_dataset_id", "source_table_id"]
+    source = job.source
+    source.must_be_kind_of Gcloud::Bigquery::Table
+    source.project_id.must_equal "source_project_id"
+    source.dataset_id.must_equal "source_dataset_id"
+    source.table_id.must_equal   "source_table_id"
 
-    mock_connection.get "/bigquery/v2/projects/target_project_id/datasets/target_dataset_id/tables/target_table_id" do |env|
-      [200, {"Content-Type"=>"application/json"},
-       destination_table_json]
-    end
-
-    job.destination.must_be_kind_of Gcloud::Bigquery::Table
-    job.destination.project_id.must_equal "target_project_id"
-    job.destination.dataset_id.must_equal "target_dataset_id"
-    job.destination.table_id.must_equal   "target_table_id"
+    mock.expect :get_table, destination_table_gapi, ["target_project_id", "target_dataset_id", "target_table_id"]
+    destination = job.destination
+    destination.must_be_kind_of Gcloud::Bigquery::Table
+    destination.project_id.must_equal "target_project_id"
+    destination.dataset_id.must_equal "target_dataset_id"
+    destination.table_id.must_equal   "target_table_id"
+    mock.verify
   end
 
   it "knows its create/write disposition flags" do
@@ -56,48 +54,30 @@ describe Gcloud::Bigquery::CopyJob, :mock_bigquery do
   end
 
   it "knows its copy config" do
-    job.config.must_be_kind_of Hash
-    job.config["copy"]["sourceTable"]["projectId"].must_equal "source_project_id"
-    job.config["copy"]["destinationTable"]["tableId"].must_equal "target_table_id"
-    job.config["copy"]["createDisposition"].must_equal "CREATE_IF_NEEDED"
+    job.config.must_be_kind_of Google::Apis::BigqueryV2::JobConfiguration
+    job.config.copy.source_table.project_id.must_equal "source_project_id"
+    job.config.copy.destination_table.table_id.must_equal "target_table_id"
+    job.config.copy.create_disposition.must_equal "CREATE_IF_NEEDED"
   end
 
-  def copy_job_hash
-    hash = random_job_hash
-    hash["configuration"]["copy"] = {
-      "sourceTable" => {
-        "projectId" => "source_project_id",
-        "datasetId" => "source_dataset_id",
-        "tableId"   => "source_table_id"
-      },
-      "destinationTable" => {
-        "projectId" => "target_project_id",
-        "datasetId" => "target_dataset_id",
-        "tableId"   => "target_table_id"
-      },
-      "createDisposition" => "CREATE_IF_NEEDED",
-      "writeDisposition" => "WRITE_EMPTY"
-    }
-    hash
-  end
-
-  def source_table_json
-    hash = random_table_hash "getting_replaced_dataset_id"
-    hash["tableReference"] = {
-      "projectId" => "source_project_id",
-      "datasetId" => "source_dataset_id",
-      "tableId"   => "source_table_id"
-    }
-    hash.to_json
-  end
-
-  def destination_table_json
-    hash = random_table_hash "getting_replaced_dataset_id"
-    hash["tableReference"] = {
-      "projectId" => "target_project_id",
-      "datasetId" => "target_dataset_id",
-      "tableId"   => "target_table_id"
-    }
-    hash.to_json
+  def copy_job_gapi
+    gapi = random_job_gapi
+    gapi.configuration = Google::Apis::BigqueryV2::JobConfiguration.new(
+      copy: Google::Apis::BigqueryV2::JobConfigurationTableCopy.new(
+        source_table: table_reference_gapi(
+          "source_project_id",
+          "source_dataset_id",
+          "source_table_id"
+        ),
+        destination_table: table_reference_gapi(
+          "target_project_id",
+          "target_dataset_id",
+          "target_table_id"
+        ),
+        create_disposition: "CREATE_IF_NEEDED",
+        write_disposition: "WRITE_EMPTY"
+      )
+    )
+    gapi
   end
 end

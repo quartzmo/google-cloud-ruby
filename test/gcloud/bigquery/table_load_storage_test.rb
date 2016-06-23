@@ -26,12 +26,12 @@ describe Gcloud::Bigquery::Table, :load, :storage, :mock_bigquery do
   let(:table_id) { "table_id" }
   let(:table_name) { "Target Table" }
   let(:description) { "This is the target table" }
-  let(:table_hash) { random_table_hash dataset,
+  let(:table_hash) { random_table_gapi dataset,
                                        table_id,
                                        table_name,
                                        description }
   let(:table) { Gcloud::Bigquery::Table.from_gapi table_hash,
-                                                  bigquery.connection }
+                                                  bigquery.service }
 
   def storage_file path = nil
     Gcloud::Storage::File.from_gapi random_file_hash(load_bucket.name, path),
@@ -46,8 +46,8 @@ describe Gcloud::Bigquery::Table, :load, :storage, :mock_bigquery do
       json["configuration"]["load"]["destinationTable"]["projectId"].must_equal table.project_id
       json["configuration"]["load"]["destinationTable"]["datasetId"].must_equal table.dataset_id
       json["configuration"]["load"]["destinationTable"]["tableId"].must_equal table.table_id
-      json["configuration"]["load"].wont_include "createDisposition"
-      json["configuration"]["load"].wont_include "writeDisposition"
+      json["configuration"]["load"].wont_include "create_disposition"
+      json["configuration"]["load"].wont_include "write_disposition"
       json["configuration"]["load"].wont_include "projectionFields"
       json["configuration"]["load"].wont_include "sourceFormat"
       json["configuration"]["load"].wont_include "allowJaggedRows"
@@ -78,8 +78,8 @@ describe Gcloud::Bigquery::Table, :load, :storage, :mock_bigquery do
       json["configuration"]["load"]["destinationTable"]["projectId"].must_equal table.project_id
       json["configuration"]["load"]["destinationTable"]["datasetId"].must_equal table.dataset_id
       json["configuration"]["load"]["destinationTable"]["tableId"].must_equal table.table_id
-      json["configuration"]["load"].wont_include "createDisposition"
-      json["configuration"]["load"].wont_include "writeDisposition"
+      json["configuration"]["load"].wont_include "create_disposition"
+      json["configuration"]["load"].wont_include "write_disposition"
       json["configuration"]["load"]["sourceFormat"].must_equal "CSV"
       json["configuration"]["load"].wont_include "allowJaggedRows"
       json["configuration"]["load"].wont_include "allowQuotedNewlines"
@@ -110,8 +110,8 @@ describe Gcloud::Bigquery::Table, :load, :storage, :mock_bigquery do
       json["configuration"]["load"]["destinationTable"]["projectId"].must_equal table.project_id
       json["configuration"]["load"]["destinationTable"]["datasetId"].must_equal table.dataset_id
       json["configuration"]["load"]["destinationTable"]["tableId"].must_equal table.table_id
-      json["configuration"]["load"].wont_include "createDisposition"
-      json["configuration"]["load"].wont_include "writeDisposition"
+      json["configuration"]["load"].wont_include "create_disposition"
+      json["configuration"]["load"].wont_include "write_disposition"
       json["configuration"]["load"]["sourceFormat"].must_equal "CSV"
       json["configuration"]["load"].wont_include "allowJaggedRows"
       json["configuration"]["load"].wont_include "allowQuotedNewlines"
@@ -142,8 +142,8 @@ describe Gcloud::Bigquery::Table, :load, :storage, :mock_bigquery do
       json["configuration"]["load"]["destinationTable"]["projectId"].must_equal table.project_id
       json["configuration"]["load"]["destinationTable"]["datasetId"].must_equal table.dataset_id
       json["configuration"]["load"]["destinationTable"]["tableId"].must_equal table.table_id
-      json["configuration"]["load"].wont_include "createDisposition"
-      json["configuration"]["load"].wont_include "writeDisposition"
+      json["configuration"]["load"].wont_include "create_disposition"
+      json["configuration"]["load"].wont_include "write_disposition"
       json["configuration"]["load"]["sourceFormat"].must_equal "CSV"
       json["configuration"]["load"]["allowJaggedRows"].must_equal true
       json["configuration"]["load"]["allowQuotedNewlines"].must_equal true
@@ -213,8 +213,8 @@ describe Gcloud::Bigquery::Table, :load, :storage, :mock_bigquery do
       json["configuration"]["load"]["destinationTable"]["projectId"].must_equal table.project_id
       json["configuration"]["load"]["destinationTable"]["datasetId"].must_equal table.dataset_id
       json["configuration"]["load"]["destinationTable"]["tableId"].must_equal table.table_id
-      json["configuration"]["load"].wont_include "createDisposition"
-      json["configuration"]["load"].wont_include "writeDisposition"
+      json["configuration"]["load"].wont_include "create_disposition"
+      json["configuration"]["load"].wont_include "write_disposition"
       json["configuration"]["load"].wont_include "sourceFormat"
       json["configuration"]["load"].wont_include "allowJaggedRows"
       json["configuration"]["load"].wont_include "allowQuotedNewlines"
@@ -241,8 +241,8 @@ describe Gcloud::Bigquery::Table, :load, :storage, :mock_bigquery do
       json["configuration"]["load"]["destinationTable"]["projectId"].must_equal table.project_id
       json["configuration"]["load"]["destinationTable"]["datasetId"].must_equal table.dataset_id
       json["configuration"]["load"]["destinationTable"]["tableId"].must_equal table.table_id
-      json["configuration"]["load"].wont_include "createDisposition"
-      json["configuration"]["load"].wont_include "writeDisposition"
+      json["configuration"]["load"].wont_include "create_disposition"
+      json["configuration"]["load"].wont_include "write_disposition"
       json["configuration"]["load"].wont_include "sourceFormat"
       json["configuration"]["load"].wont_include "allowJaggedRows"
       json["configuration"]["load"].wont_include "allowQuotedNewlines"
@@ -270,9 +270,9 @@ describe Gcloud::Bigquery::Table, :load, :storage, :mock_bigquery do
       json["configuration"]["load"]["destinationTable"]["projectId"].must_equal table.project_id
       json["configuration"]["load"]["destinationTable"]["datasetId"].must_equal table.dataset_id
       json["configuration"]["load"]["destinationTable"]["tableId"].must_equal table.table_id
-      json["configuration"]["load"].must_include "createDisposition"
-      json["configuration"]["load"]["createDisposition"].must_equal "CREATE_NEVER"
-      json["configuration"]["load"].wont_include "writeDisposition"
+      json["configuration"]["load"].must_include "create_disposition"
+      json["configuration"]["load"]["create_disposition"].must_equal "CREATE_NEVER"
+      json["configuration"]["load"].wont_include "write_disposition"
       json["configuration"]["load"].wont_include "sourceFormat"
       json["configuration"]["load"].wont_include "allowJaggedRows"
       json["configuration"]["load"].wont_include "allowQuotedNewlines"
@@ -299,9 +299,9 @@ describe Gcloud::Bigquery::Table, :load, :storage, :mock_bigquery do
       json["configuration"]["load"]["destinationTable"]["projectId"].must_equal table.project_id
       json["configuration"]["load"]["destinationTable"]["datasetId"].must_equal table.dataset_id
       json["configuration"]["load"]["destinationTable"]["tableId"].must_equal table.table_id
-      json["configuration"]["load"].must_include "createDisposition"
-      json["configuration"]["load"]["createDisposition"].must_equal "CREATE_NEVER"
-      json["configuration"]["load"].wont_include "writeDisposition"
+      json["configuration"]["load"].must_include "create_disposition"
+      json["configuration"]["load"]["create_disposition"].must_equal "CREATE_NEVER"
+      json["configuration"]["load"].wont_include "write_disposition"
       json["configuration"]["load"].wont_include "sourceFormat"
       json["configuration"]["load"].wont_include "allowJaggedRows"
       json["configuration"]["load"].wont_include "allowQuotedNewlines"
@@ -328,9 +328,9 @@ describe Gcloud::Bigquery::Table, :load, :storage, :mock_bigquery do
       json["configuration"]["load"]["destinationTable"]["projectId"].must_equal table.project_id
       json["configuration"]["load"]["destinationTable"]["datasetId"].must_equal table.dataset_id
       json["configuration"]["load"]["destinationTable"]["tableId"].must_equal table.table_id
-      json["configuration"]["load"].wont_include "createDisposition"
-      json["configuration"]["load"].must_include "writeDisposition"
-      json["configuration"]["load"]["writeDisposition"].must_equal "WRITE_TRUNCATE"
+      json["configuration"]["load"].wont_include "create_disposition"
+      json["configuration"]["load"].must_include "write_disposition"
+      json["configuration"]["load"]["write_disposition"].must_equal "WRITE_TRUNCATE"
       json["configuration"]["load"].wont_include "sourceFormat"
       json["configuration"]["load"].wont_include "allowJaggedRows"
       json["configuration"]["load"].wont_include "allowQuotedNewlines"
@@ -357,9 +357,9 @@ describe Gcloud::Bigquery::Table, :load, :storage, :mock_bigquery do
       json["configuration"]["load"]["destinationTable"]["projectId"].must_equal table.project_id
       json["configuration"]["load"]["destinationTable"]["datasetId"].must_equal table.dataset_id
       json["configuration"]["load"]["destinationTable"]["tableId"].must_equal table.table_id
-      json["configuration"]["load"].wont_include "createDisposition"
-      json["configuration"]["load"].must_include "writeDisposition"
-      json["configuration"]["load"]["writeDisposition"].must_equal "WRITE_TRUNCATE"
+      json["configuration"]["load"].wont_include "create_disposition"
+      json["configuration"]["load"].must_include "write_disposition"
+      json["configuration"]["load"]["write_disposition"].must_equal "WRITE_TRUNCATE"
       json["configuration"]["load"].wont_include "sourceFormat"
       json["configuration"]["load"].wont_include "allowJaggedRows"
       json["configuration"]["load"].wont_include "allowQuotedNewlines"
@@ -380,13 +380,13 @@ describe Gcloud::Bigquery::Table, :load, :storage, :mock_bigquery do
   end
 
   def load_job_json table, load_url
-    hash = random_job_hash
+    hash = random_job_gapi
     hash["configuration"]["load"] = {
-      "sourceUriss" => [load_url],
-      "destinationTable" => {
-        "projectId" => table.project_id,
-        "datasetId" => table.dataset_id,
-        "tableId" => table.table_id
+      source_uris: [load_url],
+      destinationTable: {
+        projectId: table.project_id,
+        datasetId: table.dataset_id,
+        tableId: table.table_id
       },
     }
     hash.to_json

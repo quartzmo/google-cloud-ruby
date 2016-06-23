@@ -27,12 +27,12 @@ describe Gcloud::Bigquery::Table, :extract, :mock_bigquery do
   let(:table_id) { "table_id" }
   let(:table_name) { "Target Table" }
   let(:description) { "This is the target table" }
-  let(:table_hash) { random_table_hash dataset,
+  let(:table_hash) { random_table_gapi dataset,
                                        table_id,
                                        table_name,
                                        description }
   let(:table) { Gcloud::Bigquery::Table.from_gapi table_hash,
-                                                  bigquery.connection }
+                                                  bigquery.service }
 
   it "can extract itself to a storage file" do
     mock_connection.post "/bigquery/v2/projects/#{project}/jobs" do |env|
@@ -236,13 +236,13 @@ describe Gcloud::Bigquery::Table, :extract, :mock_bigquery do
   end
 
   def extract_job_json table, extract_file
-    hash = random_job_hash
+    hash = random_job_gapi
     hash["configuration"]["extract"] = {
-      "destinationUris" => [extract_file.api_url],
-      "sourceTable" => {
-        "projectId" => table.project_id,
-        "datasetId" => table.dataset_id,
-        "tableId" => table.table_id
+      destinationUris: [extract_file.api_url],
+      sourceTable: {
+        projectId: table.project_id,
+        datasetId: table.dataset_id,
+        tableId: table.table_id
       },
     }
     hash.to_json

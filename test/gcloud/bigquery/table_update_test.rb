@@ -19,9 +19,9 @@ describe Gcloud::Bigquery::Table, :update, :mock_bigquery do
   let(:table_id) { "my_table" }
   let(:table_name) { "My Table" }
   let(:description) { "This is my table" }
-  let(:table_hash) { random_table_hash dataset_id, table_id, table_name, description }
+  let(:table_hash) { random_table_gapi dataset_id, table_id, table_name, description }
   let(:table) { Gcloud::Bigquery::Table.from_gapi table_hash,
-                                                  bigquery.connection }
+                                                  bigquery.service }
 
   let(:schema) { table.schema.dup }
 
@@ -32,7 +32,7 @@ describe Gcloud::Bigquery::Table, :update, :mock_bigquery do
       json = JSON.parse env.body
       json["friendlyName"].must_equal new_table_name
       [200, {"Content-Type"=>"application/json"},
-       random_table_hash(dataset_id, table_id, new_table_name, description).to_json]
+       random_table_gapi(dataset_id, table_id, new_table_name, description).to_json]
     end
 
     table.name.must_equal table_name
@@ -53,7 +53,7 @@ describe Gcloud::Bigquery::Table, :update, :mock_bigquery do
       json = JSON.parse env.body
       json["description"].must_equal new_description
       [200, {"Content-Type"=>"application/json"},
-       random_table_hash(dataset_id, table_id, table_name, new_description).to_json]
+       random_table_gapi(dataset_id, table_id, table_name, new_description).to_json]
     end
 
     table.name.must_equal table_name

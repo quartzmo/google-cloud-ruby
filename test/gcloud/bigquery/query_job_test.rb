@@ -17,8 +17,8 @@ require "json"
 require "uri"
 
 describe Gcloud::Bigquery::QueryJob, :mock_bigquery do
-  let(:job) { Gcloud::Bigquery::Job.from_gapi query_job_hash,
-                                              bigquery.connection }
+  let(:job) { Gcloud::Bigquery::Job.from_gapi query_job_gapi,
+                                              bigquery.service }
   let(:job_id) { job.job_id }
 
   it "knows it is query job" do
@@ -26,15 +26,17 @@ describe Gcloud::Bigquery::QueryJob, :mock_bigquery do
   end
 
   it "knows its destination table" do
-    mock_connection.get "/bigquery/v2/projects/target_project_id/datasets/target_dataset_id/tables/target_table_id" do |env|
-      [200, {"Content-Type"=>"application/json"},
-       destination_table_json]
-    end
+    mock = Minitest::Mock.new
+    bigquery.service.mocked_service = mock
 
-    job.destination.must_be_kind_of Gcloud::Bigquery::Table
-    job.destination.project_id.must_equal "target_project_id"
-    job.destination.dataset_id.must_equal "target_dataset_id"
-    job.destination.table_id.must_equal   "target_table_id"
+    mock.expect :get_table, destination_table_gapi, ["target_project_id", "target_dataset_id", "target_table_id"]
+
+    destination = job.destination
+    destination.must_be_kind_of Gcloud::Bigquery::Table
+    destination.project_id.must_equal "target_project_id"
+    destination.dataset_id.must_equal "target_dataset_id"
+    destination.table_id.must_equal   "target_table_id"
+    mock.verify
   end
 
   it "knows its attributes" do
@@ -51,47 +53,37 @@ describe Gcloud::Bigquery::QueryJob, :mock_bigquery do
   end
 
   it "knows its query config" do
-    job.config.must_be_kind_of Hash
-    job.config["query"]["destinationTable"]["tableId"].must_equal "target_table_id"
-    job.config["query"]["createDisposition"].must_equal "CREATE_IF_NEEDED"
-    job.config["query"]["priority"].must_equal "BATCH"
+    job.config.must_be_kind_of Google::Apis::BigqueryV2::JobConfiguration
+    job.config.query.destination_table.table_id.must_equal "target_table_id"
+    job.config.query.create_disposition.must_equal "CREATE_IF_NEEDED"
+    job.config.query.priority.must_equal "BATCH"
   end
 
-  def query_job_hash
-    hash = random_job_hash
-    hash["configuration"]["query"] = {
-      "query" => "SELECT name, age, score, active FROM [users]",
-      "destinationTable" => {
-        "projectId" => "target_project_id",
-        "datasetId" => "target_dataset_id",
-        "tableId"   => "target_table_id"
-      },
-      "tableDefinitions" => {},
-      "createDisposition" => "CREATE_IF_NEEDED",
-      "writeDisposition" => "WRITE_EMPTY",
-      "defaultDataset" => {
-        "datasetId" => "my_dataset",
-        "projectId" => project
-      },
-      "priority" => "BATCH",
-      "allowLargeResults" => true,
-      "useQueryCache" => true,
-      "flattenResults" => true
-    }
-    hash["statistics"]["query"] = {
-      "cacheHit" => false,
-      "totalBytesProcessed" => 123456
-    }
-    hash
-  end
-
-  def destination_table_json
-    hash = random_table_hash "getting_replaced_dataset_id"
-    hash["tableReference"] = {
-      "projectId" => "target_project_id",
-      "datasetId" => "target_dataset_id",
-      "tableId"   => "target_table_id"
-    }
-    hash.to_json
+  def query_job_gapi
+    gapi = random_job_gapi
+    gapi.configuration = Google::Apis::BigqueryV2::JobConfiguration.new(
+      query: Google::Apis::BigqueryV2::JobConfigurationQuery.new(
+        query: "SELECT name, age, score, active FROM [users]",
+        destination_table: table_reference_gapi(
+          "target_project_id",
+          "target_dataset_id",
+          "target_table_id"
+        ),
+        create_disposition: "CREATE_IF_NEEDED",
+        write_disposition: "WRITE_EMPTY",
+        default_dataset: dataset_reference_gapi(project, "my_dataset"),
+        priority: "BATCH",
+        use_query_cache: true,
+        allow_large_results: true,
+        flatten_results: true
+      )
+    )
+    gapi.statistics = Google::Apis::BigqueryV2::JobStatistics.new(
+      query: Google::Apis::BigqueryV2::JobStatistics2.new(
+        cache_hit: false,
+        total_bytes_processed: 123456
+      )
+    )
+    gapi
   end
 end

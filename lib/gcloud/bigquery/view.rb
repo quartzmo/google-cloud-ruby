@@ -41,8 +41,8 @@ module Gcloud
     #
     class View
       ##
-      # @private The Connection object.
-      attr_accessor :connection
+      # @private The Service object.
+      attr_accessor :service
 
       ##
       # @private The Google API Client object.
@@ -51,7 +51,7 @@ module Gcloud
       ##
       # @private Create an empty Table object.
       def initialize
-        @connection = nil
+        @service = nil
         @gapi = {}
       end
 
@@ -63,7 +63,7 @@ module Gcloud
       # @!group Attributes
       #
       def table_id
-        @gapi["tableReference"]["tableId"]
+        @gapi.table_reference.table_id
       end
 
       ##
@@ -72,7 +72,7 @@ module Gcloud
       # @!group Attributes
       #
       def dataset_id
-        @gapi["tableReference"]["datasetId"]
+        @gapi.table_reference.dataset_id
       end
 
       ##
@@ -81,7 +81,7 @@ module Gcloud
       # @!group Attributes
       #
       def project_id
-        @gapi["tableReference"]["projectId"]
+        @gapi.table_reference.project_id
       end
 
       ##
@@ -89,7 +89,7 @@ module Gcloud
       # The gapi fragment containing the Project ID, Dataset ID, and Table ID as
       # a camel-cased hash.
       def table_ref
-        table_ref = @gapi["tableReference"]
+        table_ref = @gapi.table_reference
         table_ref = table_ref.to_hash if table_ref.respond_to? :to_hash
         table_ref
       end
@@ -100,7 +100,7 @@ module Gcloud
       # @!group Attributes
       #
       def name
-        @gapi["friendlyName"]
+        @gapi.friendly_name
       end
 
       ##
@@ -119,7 +119,7 @@ module Gcloud
       #
       def etag
         ensure_full_data!
-        @gapi["etag"]
+        @gapi.etag
       end
 
       ##
@@ -129,7 +129,7 @@ module Gcloud
       #
       def api_url
         ensure_full_data!
-        @gapi["selfLink"]
+        @gapi.self_link
       end
 
       ##
@@ -139,7 +139,7 @@ module Gcloud
       #
       def description
         ensure_full_data!
-        @gapi["description"]
+        @gapi.description
       end
 
       ##
@@ -158,7 +158,7 @@ module Gcloud
       #
       def created_at
         ensure_full_data!
-        Time.at(@gapi["creationTime"] / 1000.0)
+        Time.at(@gapi.creation_time / 1000.0)
       end
 
       ##
@@ -170,8 +170,8 @@ module Gcloud
       #
       def expires_at
         ensure_full_data!
-        return nil if @gapi["expirationTime"].nil?
-        Time.at(@gapi["expirationTime"] / 1000.0)
+        return nil if @gapi.expiration_time.nil?
+        Time.at(@gapi.expiration_time / 1000.0)
       end
 
       ##
@@ -181,7 +181,7 @@ module Gcloud
       #
       def modified_at
         ensure_full_data!
-        Time.at(@gapi["lastModifiedTime"] / 1000.0)
+        Time.at(@gapi.last_modified_time / 1000.0)
       end
 
       ##
@@ -190,7 +190,7 @@ module Gcloud
       # @!group Attributes
       #
       def table?
-        @gapi["type"] == "TABLE"
+        @gapi.type == "TABLE"
       end
 
       ##
@@ -199,7 +199,7 @@ module Gcloud
       # @!group Attributes
       #
       def view?
-        @gapi["type"] == "VIEW"
+        @gapi.type == "VIEW"
       end
 
       ##
@@ -210,7 +210,7 @@ module Gcloud
       #
       def location
         ensure_full_data!
-        @gapi["location"]
+        @gapi.location
       end
 
       ##
@@ -220,7 +220,7 @@ module Gcloud
       #
       def schema
         ensure_full_data!
-        s = @gapi["schema"]
+        s = @gapi.schema
         s = s.to_hash if s.respond_to? :to_hash
         s = {} if s.nil?
         s
@@ -232,7 +232,7 @@ module Gcloud
       # @!group Attributes
       #
       def fields
-        f = schema["fields"]
+        f = schema.fields
         f = f.to_hash if f.respond_to? :to_hash
         f = [] if f.nil?
         f
@@ -244,7 +244,7 @@ module Gcloud
       # @!group Attributes
       #
       def headers
-        fields.map { |f| f["name"] }
+        fields.map { |f| f.name }
       end
 
       ##
@@ -253,7 +253,7 @@ module Gcloud
       # @!group Attributes
       #
       def query
-        @gapi["view"]["query"] if @gapi["view"]
+        @gapi.view.query if @gapi.view
       end
 
       ##
@@ -325,14 +325,10 @@ module Gcloud
       #
       def data max: nil, timeout: nil, cache: nil, dryrun: nil
         sql = "SELECT * FROM #{@gapi['id']}"
-        ensure_connection!
+        ensure_service!
         options = { max: max, timeout: timeout, cache: cache, dryrun: dryrun }
-        resp = connection.query sql, options
-        if resp.success?
-          QueryData.from_gapi resp.data, connection
-        else
-          fail ApiError.from_response(resp)
-        end
+        gapi = service.query sql, options
+        QueryData.from_gapi gapi, service
       end
 
       ##
@@ -353,13 +349,9 @@ module Gcloud
       # @!group Lifecycle
       #
       def delete
-        ensure_connection!
-        resp = connection.delete_table dataset_id, table_id
-        if resp.success?
-          true
-        else
-          fail ApiError.from_response(resp)
-        end
+        ensure_service!
+        gapi = service.delete_table dataset_id, table_id
+        true
       end
 
       ##
@@ -368,13 +360,9 @@ module Gcloud
       # @!group Lifecycle
       #
       def reload!
-        ensure_connection!
-        resp = connection.get_table dataset_id, table_id
-        if resp.success?
-          @gapi = resp.data
-        else
-          fail ApiError.from_response(resp)
-        end
+        ensure_service!
+        gapi = service.get_table dataset_id, table_id
+        @gapi = gapi
       end
       alias_method :refresh!, :reload!
 
@@ -383,7 +371,7 @@ module Gcloud
       def self.from_gapi gapi, conn
         new.tap do |f|
           f.gapi = gapi
-          f.connection = conn
+          f.service = conn
         end
       end
 
@@ -391,18 +379,14 @@ module Gcloud
 
       ##
       # Raise an error unless an active connection is available.
-      def ensure_connection!
-        fail "Must have active connection" unless connection
+      def ensure_service!
+        fail "Must have active connection" unless service
       end
 
       def patch_gapi! options = {}
-        ensure_connection!
-        resp = connection.patch_table dataset_id, table_id, options
-        if resp.success?
-          @gapi = resp.data
-        else
-          fail ApiError.from_response(resp)
-        end
+        ensure_service!
+        gapi = service.patch_table dataset_id, table_id, options
+        @gapi = gapi
       end
 
       ##
@@ -413,17 +397,13 @@ module Gcloud
       end
 
       def reload_gapi!
-        ensure_connection!
-        resp = connection.get_table dataset_id, table_id
-        if resp.success?
-          @gapi = resp.data
-        else
-          fail ApiError.from_response(resp)
-        end
+        ensure_service!
+        gapi = service.get_table dataset_id, table_id
+        @gapi = gapi
       end
 
       def data_complete?
-        !@gapi["creationTime"].nil?
+        !@gapi.creation_time.nil?
       end
     end
   end

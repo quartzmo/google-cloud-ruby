@@ -17,25 +17,25 @@ require "helper"
 describe Gcloud::Bigquery::Project, :query_job, :mock_bigquery do
   let(:query) { "SELECT name, age, score, active FROM [some_project:some_dataset.users]" }
   let(:dataset_id) { "my_dataset" }
-  let(:dataset_hash) { random_dataset_hash dataset_id }
+  let(:dataset_hash) { random_dataset_gapi dataset_id }
   let(:dataset) { Gcloud::Bigquery::Dataset.from_gapi dataset_hash,
-                                                      bigquery.connection }
+                                                      bigquery.service }
   let(:table_id) { "my_table" }
-  let(:table_hash) { random_table_hash dataset_id, table_id }
+  let(:table_hash) { random_table_gapi dataset_id, table_id }
   let(:table) { Gcloud::Bigquery::Table.from_gapi table_hash,
-                                                  bigquery.connection }
+                                                  bigquery.service }
 
   it "queries the data" do
     mock_connection.post "/bigquery/v2/projects/#{project}/jobs" do |env|
       json = JSON.parse(env.body)
       json["configuration"]["query"]["query"].must_equal query
       json["configuration"]["query"]["priority"].must_equal "INTERACTIVE"
-      json["configuration"]["query"]["useQueryCache"].must_equal true
+      json["configuration"]["query"]["use_query_cache"].must_equal true
       json["configuration"]["query"]["destinationTable"].must_be :nil?
-      json["configuration"]["query"]["createDisposition"].must_be :nil?
-      json["configuration"]["query"]["writeDisposition"].must_be :nil?
-      json["configuration"]["query"]["allowLargeResults"].must_be :nil?
-      json["configuration"]["query"]["flattenResults"].must_be :nil?
+      json["configuration"]["query"]["create_disposition"].must_be :nil?
+      json["configuration"]["query"]["write_disposition"].must_be :nil?
+      json["configuration"]["query"]["allow_large_results"].must_be :nil?
+      json["configuration"]["query"]["flatten_results"].must_be :nil?
       json["configuration"]["query"]["defaultDataset"].must_be :nil?
       [200, {"Content-Type"=>"application/json"},
        query_job_json(query)]
@@ -50,7 +50,7 @@ describe Gcloud::Bigquery::Project, :query_job, :mock_bigquery do
       json = JSON.parse(env.body)
       json["configuration"]["query"]["query"].must_equal query
       json["configuration"]["query"]["priority"].must_equal "BATCH"
-      json["configuration"]["query"]["useQueryCache"].must_equal false
+      json["configuration"]["query"]["use_query_cache"].must_equal false
       [200, {"Content-Type"=>"application/json"},
        query_job_json(query)]
     end
@@ -67,10 +67,10 @@ describe Gcloud::Bigquery::Project, :query_job, :mock_bigquery do
       json["configuration"]["query"]["destinationTable"]["projectId"].must_equal table.project_id
       json["configuration"]["query"]["destinationTable"]["datasetId"].must_equal table.dataset_id
       json["configuration"]["query"]["destinationTable"]["tableId"].must_equal   table.table_id
-      json["configuration"]["query"]["createDisposition"].must_equal "CREATE_NEVER"
-      json["configuration"]["query"]["writeDisposition"].must_equal "WRITE_TRUNCATE"
-      json["configuration"]["query"]["allowLargeResults"].must_equal true
-      json["configuration"]["query"]["flattenResults"].must_equal false
+      json["configuration"]["query"]["create_disposition"].must_equal "CREATE_NEVER"
+      json["configuration"]["query"]["write_disposition"].must_equal "WRITE_TRUNCATE"
+      json["configuration"]["query"]["allow_large_results"].must_equal true
+      json["configuration"]["query"]["flatten_results"].must_equal false
       [200, {"Content-Type"=>"application/json"},
        query_job_json(query)]
     end
@@ -112,24 +112,24 @@ describe Gcloud::Bigquery::Project, :query_job, :mock_bigquery do
   end
 
   def query_job_json query
-    hash = random_job_hash
+    hash = random_job_gapi
     hash["configuration"]["query"] = {
-      "query" => query,
-      # "defaultDataset" => {
-      #   "datasetId" => string,
-      #   "projectId" => string
+      query: query,
+      # defaultDataset: {
+      #   datasetId: string,
+      #   projectId: string
       # },
-      # "destinationTable" => {
-      #   "projectId" => string,
-      #   "datasetId" => string,
-      #   "tableId" => string
+      # destinationTable: {
+      #   projectId: string,
+      #   datasetId: string,
+      #   tableId: string
       # },
-      "createDisposition" => "CREATE_IF_NEEDED",
-      "writeDisposition" => "WRITE_EMPTY",
-      "priority" => "INTERACTIVE",
-      "allowLargeResults" => true,
-      "useQueryCache" => true,
-      "flattenResults" => true
+      create_disposition: "CREATE_IF_NEEDED",
+      write_disposition: "WRITE_EMPTY",
+      priority: "INTERACTIVE",
+      allow_large_results: true,
+      use_query_cache: true,
+      flatten_results: true
     }
     hash.to_json
   end

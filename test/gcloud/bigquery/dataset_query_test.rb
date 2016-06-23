@@ -17,9 +17,9 @@ require "helper"
 describe Gcloud::Bigquery::Dataset, :query, :mock_bigquery do
   let(:query) { "SELECT name, age, score, active FROM [some_project:some_dataset.users]" }
   let(:dataset_id) { "my_dataset" }
-  let(:dataset_hash) { random_dataset_hash dataset_id }
+  let(:dataset_hash) { random_dataset_gapi dataset_id }
   let(:dataset) { Gcloud::Bigquery::Dataset.from_gapi dataset_hash,
-                                                      bigquery.connection }
+                                                      bigquery.service }
 
   it "queries the data with default dataset option set" do
     mock_connection.post "/bigquery/v2/projects/#{project}/queries" do |env|
@@ -31,7 +31,7 @@ describe Gcloud::Bigquery::Dataset, :query, :mock_bigquery do
       json["defaultDataset"]["projectId"].must_equal dataset.project_id
       json["timeoutMs"].must_equal 10000
       json["dryRun"].must_be :nil?
-      json["useQueryCache"].must_equal true
+      json["use_query_cache"].must_equal true
       [200, {"Content-Type"=>"application/json"},
        query_data_json]
     end

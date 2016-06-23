@@ -80,7 +80,7 @@ describe Gcloud::Bigquery::Project, :mock_bigquery do
       rule["role"].must_equal "WRITER"
       rule["userByEmail"].must_equal "writers@example.com"
 
-      ret_dataset = random_dataset_hash("my_dataset")
+      ret_dataset = random_dataset_gapi("my_dataset")
       ret_dataset["access"] = access
       [200, {"Content-Type"=>"application/json"},
        ret_dataset.to_json]
@@ -106,7 +106,7 @@ describe Gcloud::Bigquery::Project, :mock_bigquery do
       rule["role"].must_equal "WRITER"
       rule["userByEmail"].must_equal "writers@example.com"
 
-      ret_dataset = random_dataset_hash("my_dataset")
+      ret_dataset = random_dataset_gapi("my_dataset")
       ret_dataset["access"] = access
       [200, {"Content-Type"=>"application/json"},
        ret_dataset.to_json]
@@ -567,30 +567,30 @@ describe Gcloud::Bigquery::Project, :mock_bigquery do
   end
 
   def create_dataset_json id, name = nil, description = nil, default_expiration = nil, location = "US"
-    random_dataset_hash(id, name, description, default_expiration, location).to_json
+    random_dataset_gapi(id, name, description, default_expiration, location).to_json
   end
 
   def find_dataset_json id, name = nil, description = nil, default_expiration = nil
-    random_dataset_hash(id, name, description, default_expiration).to_json
+    random_dataset_gapi(id, name, description, default_expiration).to_json
   end
 
   def list_datasets_json count = 2, token = nil
-    datasets = count.times.map { random_dataset_small_hash }
+    datasets = count.times.map { random_dataset_small_gapi }
     hash = {"kind"=>"bigquery#datasetList", "datasets"=>datasets}
     hash["nextPageToken"] = token unless token.nil?
     hash.to_json
   end
 
   def find_job_json job_id
-    random_job_hash(job_id).to_json
+    random_job_gapi(job_id).to_json
   end
 
   def list_jobs_json count = 2, token = nil, total = nil
     hash = {
-      "kind" => "bigquery#jobList",
-      "etag" => "etag",
-      "jobs" => count.times.map { random_job_hash },
-      "totalItems" => (total || count)
+      kind: "bigquery#jobList",
+      etag: "etag",
+      jobs: count.times.map { random_job_gapi },
+      totalItems: (total || count)
     }
     hash["nextPageToken"] = token unless token.nil?
     hash.to_json

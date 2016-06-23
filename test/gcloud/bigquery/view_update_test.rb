@@ -19,9 +19,9 @@ describe Gcloud::Bigquery::View, :update, :mock_bigquery do
   let(:table_id) { "my_view" }
   let(:table_name) { "My View" }
   let(:description) { "This is my view" }
-  let(:view_hash) { random_view_hash dataset_id, table_id, table_name, description }
+  let(:view_hash) { random_view_gapi dataset_id, table_id, table_name, description }
   let(:view) { Gcloud::Bigquery::View.from_gapi view_hash,
-                                                bigquery.connection }
+                                                bigquery.service }
 
   let(:schema) { view.schema.dup }
 
@@ -32,7 +32,7 @@ describe Gcloud::Bigquery::View, :update, :mock_bigquery do
       json = JSON.parse env.body
       json["friendlyName"].must_equal new_table_name
       [200, {"Content-Type"=>"application/json"},
-       random_view_hash(dataset_id, table_id, new_table_name, description).to_json]
+       random_view_gapi(dataset_id, table_id, new_table_name, description).to_json]
     end
 
     view.name.must_equal table_name
@@ -53,7 +53,7 @@ describe Gcloud::Bigquery::View, :update, :mock_bigquery do
       json = JSON.parse env.body
       json["description"].must_equal new_description
       [200, {"Content-Type"=>"application/json"},
-       random_view_hash(dataset_id, table_id, table_name, new_description).to_json]
+       random_view_gapi(dataset_id, table_id, table_name, new_description).to_json]
     end
 
     view.name.must_equal table_name
@@ -90,8 +90,8 @@ describe Gcloud::Bigquery::View, :update, :mock_bigquery do
   end
 
   def new_view_json query
-    hash = random_view_hash dataset_id, table_id, table_name, description
-    hash["view"] = { "query" => query }
+    hash = random_view_gapi dataset_id, table_id, table_name, description
+    hash["view"] = { query: query }
     hash.to_json
   end
 end

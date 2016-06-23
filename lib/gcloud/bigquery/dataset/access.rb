@@ -446,7 +446,7 @@ module Gcloud
           if view.respond_to? :table_ref
             view.table_ref
           else
-            Connection.table_ref_from_s view, @context
+            Service.table_ref_from_s view, @context
           end
         end
 
@@ -473,7 +473,7 @@ module Gcloud
           # If scope is view, make sure value is in the right format
           value = validate_view(value) if scope == "view"
           # Remove any rules of this role, scope, and value
-          access.reject! { |h| h["role"] == role && h[scope] == value }
+          access.reject! { |h| h.role == role && h[scope] == value }
         end
 
         # @private
@@ -485,7 +485,7 @@ module Gcloud
           # If scope is view, make sure value is in the right format
           value = validate_view(value) if scope == "view"
           # Detect any rules of this role, scope, and value
-          !(!access.detect { |h| h["role"] == role && h[scope] == value })
+          !(!access.detect { |h| h.role == role && h[scope] == value })
         end
       end
     end

@@ -21,10 +21,10 @@ describe Gcloud::Bigquery::View, :attributes, :mock_bigquery do
   let(:table_id) { "my_view" }
   let(:table_name) { "My View" }
   let(:description) { "This is my view" }
-  let(:view_hash) { random_view_small_hash "my_view", table_id, table_name }
-  let(:view_full_json) { random_view_hash("my_view", table_id, table_name, description).to_json }
+  let(:view_hash) { random_view_small_gapi "my_view", table_id, table_name }
+  let(:view_full_json) { random_view_gapi("my_view", table_id, table_name, description).to_json }
   let(:view) { Gcloud::Bigquery::View.from_gapi view_hash,
-                                                bigquery.connection }
+                                                bigquery.service }
 
   it "gets full data for created_at" do
     mock_connection.get "/bigquery/v2/projects/#{project}/datasets/#{view.dataset_id}/tables/#{view.table_id}" do |env|

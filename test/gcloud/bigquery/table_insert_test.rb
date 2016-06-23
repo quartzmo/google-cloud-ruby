@@ -19,9 +19,9 @@ describe Gcloud::Bigquery::Table, :insert, :mock_bigquery do
                 {"name"=>"Aaron", "age"=>"42", "score"=>"8.15", "active"=>"false"},
                 {"name"=>"Sally", "age"=>nil, "score"=>nil, "active"=>nil}] }
   let(:dataset_id) { "dataset" }
-  let(:table_hash) { random_table_hash dataset_id }
+  let(:table_hash) { random_table_gapi dataset_id }
   let(:table) { Gcloud::Bigquery::Table.from_gapi table_hash,
-                                                  bigquery.connection }
+                                                  bigquery.service }
 
   it "can insert one row" do
     mock_connection.post "/bigquery/v2/projects/#{table.project_id}/datasets/#{table.dataset_id}/tables/#{table.table_id}/insertAll" do |env|
@@ -120,22 +120,22 @@ describe Gcloud::Bigquery::Table, :insert, :mock_bigquery do
 
   def success_table_insert_json
     {
-      "kind" => "bigquery#tableDataInsertAllResponse",
-      "insertErrors" => []
+      kind: "bigquery#tableDataInsertAllResponse",
+      insertErrors: []
     }.to_json
   end
 
   def failure_table_insert_json
     {
-      "kind" => "bigquery#tableDataInsertAllResponse",
-      "insertErrors" => [
+      kind: "bigquery#tableDataInsertAllResponse",
+      insertErrors: [
         {
-          "index" => 0,
-          "errors" => [
+          index: 0,
+          errors: [
             {
               "reason"    => "r34s0n",
               "location"  => "l0c4t10n",
-              "debugInfo" => "d3bugInf0",
+              debugInfo: "d3bugInf0",
               "message"   => "m3ss4g3"
             }
           ]
