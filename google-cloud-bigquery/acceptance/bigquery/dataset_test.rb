@@ -102,13 +102,26 @@ describe Google::Cloud::Bigquery::Dataset, :bigquery do
     end
   end
 
-  it "imports data from a local file and creates a new table with specified schema" do
+  it "imports data from a local file and creates a new table with specified schema in a block" do
     job = dataset.load "local_file_table", local_file do |schema|
       schema.integer  "id",     description: "id description",    mode: :required
       schema.string    "breed", description: "breed description", mode: :required
       schema.string    "name",  description: "name description",  mode: :required
       schema.timestamp "dob",   description: "dob description",   mode: :required
     end
+    job.wait_until_done!
+    job.output_rows.must_equal 3
+  end
+
+  it "imports data from a local file and creates a new table with specified schema as an option" do
+    schema = bigquery.schema
+    schema.integer  "id",     description: "id description",    mode: :required
+    schema.string    "breed", description: "breed description", mode: :required
+    schema.string    "name",  description: "name description",  mode: :required
+    schema.timestamp "dob",   description: "dob description",   mode: :required
+
+    job = dataset.load "local_file_table_2", local_file, schema: schema
+
     job.wait_until_done!
     job.output_rows.must_equal 3
   end
