@@ -20,6 +20,7 @@ require "helper"
 describe Google::Cloud::Bigtable::ColumnFamilyMap, :mock_bigtable do
   let(:cfm) { Google::Cloud::Bigtable::ColumnFamilyMap.from_grpc column_families_grpc }
   let(:deprecated_gc_rule_warning) { "The positional gc_rule argument is deprecated. Use the named gc_rule argument instead.\n" }
+  let(:frozen_error_class) { defined? FrozenError ? FrozenError : RuntimeError }
 
   it "adds a column family" do
     cf_name = "new-cf"
@@ -75,7 +76,7 @@ describe Google::Cloud::Bigtable::ColumnFamilyMap, :mock_bigtable do
 
     cfm.freeze
 
-    error = expect { cfm.add cf_name }.must_raise FrozenError
+    error = expect { cfm.add cf_name }.must_raise frozen_error_class
     error.message.must_equal "can't modify frozen Hash"
   end
 
@@ -117,7 +118,7 @@ describe Google::Cloud::Bigtable::ColumnFamilyMap, :mock_bigtable do
 
     cfm.freeze
 
-    error = expect { cfm.update cf_name }.must_raise FrozenError
+    error = expect { cfm.update cf_name }.must_raise frozen_error_class
     error.message.must_equal "can't modify frozen Hash"
   end
 
@@ -144,7 +145,7 @@ describe Google::Cloud::Bigtable::ColumnFamilyMap, :mock_bigtable do
 
     cfm.freeze
 
-    error = expect { cfm.delete cf_name }.must_raise FrozenError
+    error = expect { cfm.delete cf_name }.must_raise frozen_error_class
     error.message.must_equal "can't modify frozen Hash"
   end
 end
