@@ -19,6 +19,7 @@ require "helper"
 
 describe Google::Cloud::Bigtable::ColumnFamilyMap, :mock_bigtable do
   let(:cfm) { Google::Cloud::Bigtable::ColumnFamilyMap.from_grpc column_families_grpc }
+  let(:deprecated_gc_rule_warning) { "The positional gc_rule argument is deprecated. Use the named gc_rule argument instead.\n" }
 
   it "adds a column family" do
     cf_name = "new-cf"
@@ -44,6 +45,22 @@ describe Google::Cloud::Bigtable::ColumnFamilyMap, :mock_bigtable do
     cf = cfs[cf_name]
     cf.must_be_kind_of Google::Bigtable::Admin::V2::ColumnFamily
     cf.gc_rule.must_be :nil?
+  end
+
+  it "adds a column family with the deprecated gc_rule" do
+    cf_name = "new-cf"
+
+    gc_rule = Google::Cloud::Bigtable::GcRule.max_versions 1
+    expect do
+      cfm.add cf_name, gc_rule
+    end.must_output "", deprecated_gc_rule_warning
+
+    cfs = cfm.to_grpc
+    cfs.length.must_equal 4
+    cf = cfs[cf_name]
+    cf.must_be_kind_of Google::Bigtable::Admin::V2::ColumnFamily
+    cf.gc_rule.must_be_kind_of Google::Bigtable::Admin::V2::GcRule
+    cf.gc_rule.must_equal gc_rule.to_grpc
   end
 
   it "doesn't add a column family if one already exists" do
@@ -86,6 +103,22 @@ describe Google::Cloud::Bigtable::ColumnFamilyMap, :mock_bigtable do
     cf = cfs[cf_name]
     cf.must_be_kind_of Google::Bigtable::Admin::V2::ColumnFamily
     cf.gc_rule.must_be :nil?
+  end
+
+  it "updates a column family with the deprecated gc_rule" do
+    cf_name = cfm.names.first
+
+    gc_rule = Google::Cloud::Bigtable::GcRule.max_versions 1
+    expect do
+      cfm.update cf_name, gc_rule
+    end.must_output "", deprecated_gc_rule_warning
+
+    cfs = cfm.to_grpc
+    cfs.length.must_equal 3
+    cf = cfs[cf_name]
+    cf.must_be_kind_of Google::Bigtable::Admin::V2::ColumnFamily
+    cf.gc_rule.must_be_kind_of Google::Bigtable::Admin::V2::GcRule
+    cf.gc_rule.must_equal gc_rule.to_grpc
   end
 
   it "doesn't update a column family if one doesn't exist" do
