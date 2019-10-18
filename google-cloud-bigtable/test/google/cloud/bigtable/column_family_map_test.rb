@@ -105,22 +105,6 @@ describe Google::Cloud::Bigtable::ColumnFamilyMap, :mock_bigtable do
     cf.gc_rule.must_be :nil?
   end
 
-  it "updates a column family with the deprecated gc_rule" do
-    cf_name = cfm.names.first
-
-    gc_rule = Google::Cloud::Bigtable::GcRule.max_versions 1
-    expect do
-      cfm.update cf_name, gc_rule
-    end.must_output "", deprecated_gc_rule_warning
-
-    cfs = cfm.to_grpc
-    cfs.length.must_equal 3
-    cf = cfs[cf_name]
-    cf.must_be_kind_of Google::Bigtable::Admin::V2::ColumnFamily
-    cf.gc_rule.must_be_kind_of Google::Bigtable::Admin::V2::GcRule
-    cf.gc_rule.must_equal gc_rule.to_grpc
-  end
-
   it "doesn't update a column family if one doesn't exist" do
     cf_name = "new-cf"
 

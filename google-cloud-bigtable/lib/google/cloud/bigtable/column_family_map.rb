@@ -143,11 +143,10 @@ module Google
         ##
         # Updates an existing column family in the table.
         #
-        # @overload update(name, gc_rule: nil)
-        #   @param name [String] Column family name
-        #   @param gc_rule [Google::Cloud::Bigtable::GcRule] The new garbage
-        #     collection rule to be used for the column family. Optional. The
-        #     service default value will be used when not specified.
+        # @param name [String] Column family name
+        # @param gc_rule [Google::Cloud::Bigtable::GcRule] The new garbage
+        #   collection rule to be used for the column family. Optional. The
+        #   service default value will be used when not specified.
         #
         # @raise [ArgumentError] if the column family name does not exist.
         # @raise [FrozenError] if the column family map is frozen.
@@ -167,13 +166,8 @@ module Google
         #     column_families.update "cf2", gc_rule: rule_union
         #   end
         #
-        def update name, positional_gc_rule = nil, gc_rule: nil
+        def update name, gc_rule: nil
           raise ArgumentError, "column family #{name.inspect} does not exist" unless @column_families.has_key? name
-
-          gc_rule ||= positional_gc_rule
-          if positional_gc_rule
-            warn "The positional gc_rule argument is deprecated. Use the named gc_rule argument instead.".freeze
-          end
 
           column_family = Google::Bigtable::Admin::V2::ColumnFamily.new
           column_family.gc_rule = gc_rule.to_grpc if gc_rule
