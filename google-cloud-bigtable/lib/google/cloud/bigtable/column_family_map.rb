@@ -129,7 +129,8 @@ module Google
 
           gc_rule ||= positional_gc_rule
           if positional_gc_rule
-            warn "The positional gc_rule argument is deprecated. Use the named gc_rule argument instead.".freeze
+            warn "The positional gc_rule argument is deprecated. " \
+                 "Use the named gc_rule argument instead.".freeze
           end
 
           column_family = Google::Bigtable::Admin::V2::ColumnFamily.new
