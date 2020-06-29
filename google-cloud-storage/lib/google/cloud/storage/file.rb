@@ -1441,8 +1441,8 @@ module Google
         #
         # A {SignedUrlUnavailable} is raised if the service account credentials
         # are missing. Service account credentials are acquired by following the
-        # steps in [Service Account Authentication](
-        # https://cloud.google.com/storage/docs/authentication#service_accounts).
+        # steps in [Service Account
+        # Authentication](https://cloud.google.com/storage/docs/authentication#service_accounts).
         #
         # @see https://cloud.google.com/storage/docs/access-control/signed-urls
         #   Signed URLs guide
