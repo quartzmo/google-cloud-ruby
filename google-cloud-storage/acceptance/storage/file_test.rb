@@ -37,7 +37,31 @@ describe Google::Cloud::Storage::File, :storage do
   after do
     bucket.files(versions: true).all { |f| f.delete generation: true rescue nil }
   end
+focus
+  it "should upload and download a large file in chunks" do
+    original = File.new files[:big][:path]
+    uploaded = bucket.create_file original, "three-mb-file.tif",
+      cache_control: "public, max-age=3600",
+      content_disposition: "attachment; filename=filename.ext",
+      content_language: "en",
+      content_type: "text/plain",
+      custom_time: custom_time,
+      metadata: { player: "Alice", score: 101 }
 
+    Tempfile.open ["google-cloud", ".tif"] do |tmpfile|
+      tmpfile.binmode
+      downloaded = uploaded.download tmpfile
+
+      _(downloaded.size).must_equal original.size
+      _(downloaded.size).must_equal uploaded.size
+      _(downloaded.size).must_equal tmpfile.size # Same file
+
+      _(File.read(downloaded.path, mode: "rb")).must_equal File.read(original.path, mode: "rb")
+    end
+
+    uploaded.delete
+  end
+focus
   it "should upload and download a file" do
     original = File.new files[:logo][:path]
     uploaded = bucket.create_file original, "CloudLogo.png",

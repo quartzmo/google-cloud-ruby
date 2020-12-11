@@ -2,6 +2,7 @@ source "https://rubygems.org"
 
 gemspec
 
+gem "google-api-client", path: "../../google-api-ruby-client"
 gem "google-cloud-core", path: "../google-cloud-core"
 gem "google-cloud-env", path: "../google-cloud-env"
 gem "google-cloud-errors", path: "../google-cloud-errors"
