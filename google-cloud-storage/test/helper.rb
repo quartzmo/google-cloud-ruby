@@ -363,14 +363,20 @@ class MockStorage < Minitest::Spec
 
   def compose_request source_files, destination_gapi
     source_objects = source_files.map do |file|
-      if file.is_a? String
-        Google::Apis::StorageV1::ComposeRequest::SourceObject.new \
-          name: file
-      else
-        Google::Apis::StorageV1::ComposeRequest::SourceObject.new \
-          name: file.name,
-          generation: file.generation
+      src = if file.is_a? String
+              Google::Apis::StorageV1::ComposeRequest::SourceObject.new \
+                name: file
+            else
+              Google::Apis::StorageV1::ComposeRequest::SourceObject.new \
+                name: file.name,
+                generation: file.generation
+            end
+      if file.respond_to?(:if_generation_match) && file.if_generation_match # File::Reference
+        src.object_preconditions = Google::Apis::StorageV1::ComposeRequest::SourceObject::ObjectPreconditions.new(
+          if_generation_match: file.if_generation_match
+        )
       end
+      src
     end
     Google::Apis::StorageV1::ComposeRequest.new(
       destination: destination_gapi,

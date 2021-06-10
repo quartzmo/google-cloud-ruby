@@ -1365,9 +1365,11 @@ module Google
         # encrypted with the same key, and the resulting destination file will
         # also be encrypted with the same key.
         #
-        # @param [Array<String, Google::Cloud::Storage::File>] sources The list
-        #   of source file names or objects that will be concatenated into a
-        #   single file.
+        # @param [Array<String, Google::Cloud::Storage::File, Google::Cloud::Storage::File::Reference>] sources
+        #   The list of source file names or objects that will be concatenated
+        #   into a single file. Use {Google::Cloud::Storage::File::Reference}
+        #   objects to pass preconditions that must be met for this operation
+        #   to execute.
         # @param [String] destination The name of the new file.
         # @param [String] acl A predefined set of access controls to apply to
         #   this file.
@@ -1394,11 +1396,12 @@ module Google
         #   and the resulting destination file will also be encrypted with the
         #   key.
         # @param [Integer] if_generation_match Makes the operation conditional
-        #   on whether the file's current generation matches the given value.
-        #   Setting to 0 makes the operation succeed only if there are no live
-        #   versions of the file.
+        #   on whether the destination file's current generation matches the
+        #   given value. Setting to 0 makes the operation succeed only if there
+        #   are no live versions of the file.
         # @param [Integer] if_metageneration_match Makes the operation conditional
-        #   on whether the file's current metageneration matches the given value.
+        #   on whether the destination file's current metageneration matches the
+        #   given value.
         #
         # @yield [file] A block yielding a delegate file object for setting the
         #   properties of the destination file.

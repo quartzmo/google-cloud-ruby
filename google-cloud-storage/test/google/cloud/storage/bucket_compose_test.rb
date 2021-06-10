@@ -46,7 +46,8 @@ describe Google::Cloud::Storage::Bucket, :compose, :mock_storage do
     }
   end
   let(:key_options) { { header: key_headers } }
-  let(:generation) { 1234567890 }
+  let(:generation) { 1234567891 }
+  let(:generation_2) { 1234567892 }
   let(:metageneration) { 6 }
 
   it "can compose a new file with string sources" do
@@ -76,8 +77,8 @@ describe Google::Cloud::Storage::Bucket, :compose, :mock_storage do
   end
 
   it "can compose a new file with File sources that have generations" do
-    file_gapi.generation = "123"
-    file_2_gapi.generation = "456"
+    file_gapi.generation = generation
+    file_2_gapi.generation = generation_2
 
     mock = Minitest::Mock.new
     mock.expect :compose_object, file_3_gapi, compose_object_args(bucket.name, file_3_name, [file_gapi, file_2_gapi])
@@ -85,6 +86,53 @@ describe Google::Cloud::Storage::Bucket, :compose, :mock_storage do
     bucket.service.mocked_service = mock
 
     new_file = bucket.compose [file, file_2], file_3_name
+    _(new_file).must_be_kind_of Google::Cloud::Storage::File
+    _(new_file.name).must_equal file_3_name
+
+    mock.verify
+  end
+
+  it "can compose a new file with File::Reference sources" do
+    file_gapi.generation = nil
+    file_2_gapi.generation = nil
+    mock = Minitest::Mock.new
+    mock.expect :compose_object, file_3_gapi, compose_object_args(bucket.name, file_3_name, [file_gapi, file_2_gapi])
+    bucket.service.mocked_service = mock
+
+    file_ref = file.to_file_reference
+    file_ref_2 = file_2.to_file_reference
+    new_file = bucket.compose [file_ref, file_ref_2], file_3_name
+    _(new_file).must_be_kind_of Google::Cloud::Storage::File
+    _(new_file.name).must_equal file_3_name
+
+    mock.verify
+  end
+
+  it "can compose a new file with File::Reference sources that have generations" do
+    file_ref = file.to_file_reference generation: generation
+    file_ref_2 = file_2.to_file_reference generation: generation_2
+
+    mock = Minitest::Mock.new
+    mock.expect :compose_object, file_3_gapi, compose_object_args(bucket.name, file_3_name, [file_ref, file_ref_2])
+    bucket.service.mocked_service = mock
+
+
+    new_file = bucket.compose [file_ref, file_ref_2], file_3_name
+    _(new_file).must_be_kind_of Google::Cloud::Storage::File
+    _(new_file.name).must_equal file_3_name
+
+    mock.verify
+  end
+
+  it "can compose a new file with File::Reference sources that have if_generation_match preconditions" do
+    file_ref = file.to_file_reference if_generation_match: generation
+    file_ref_2 = file_2.to_file_reference if_generation_match: generation_2
+
+    mock = Minitest::Mock.new
+    mock.expect :compose_object, file_3_gapi, compose_object_args(bucket.name, file_3_name, [file_ref, file_ref_2])
+    bucket.service.mocked_service = mock
+
+    new_file = bucket.compose [file_ref, file_ref_2], file_3_name
     _(new_file).must_be_kind_of Google::Cloud::Storage::File
     _(new_file.name).must_equal file_3_name
 

@@ -715,14 +715,20 @@ module Google
 
         def compose_file_source_objects source_files
           source_files.map do |file|
-            if file.is_a? Google::Cloud::Storage::File
-              Google::Apis::StorageV1::ComposeRequest::SourceObject.new \
-                name: file.name,
-                generation: file.generation
-            else
-              Google::Apis::StorageV1::ComposeRequest::SourceObject.new \
-                name: file
+            src = if file.is_a?(Google::Cloud::Storage::File) || file.is_a?(Google::Cloud::Storage::File::Reference)
+                    Google::Apis::StorageV1::ComposeRequest::SourceObject.new \
+                      name: file.name,
+                      generation: file.generation
+                  else
+                    Google::Apis::StorageV1::ComposeRequest::SourceObject.new \
+                      name: file
+                  end
+            if file.respond_to?(:if_generation_match) && file.if_generation_match # File::Reference
+              src.object_preconditions = Google::Apis::StorageV1::ComposeRequest::SourceObject::ObjectPreconditions.new(
+                if_generation_match: file.if_generation_match
+              )
             end
+            src
           end
         end
 

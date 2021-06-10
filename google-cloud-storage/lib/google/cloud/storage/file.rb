@@ -1891,6 +1891,25 @@ module Google
         end
 
         ##
+        # Returns a new file reference object with optional preconditions.
+        # See `sources` in {Bucket#compose}.
+        #
+        # @param [Integer] generation The content generation of the file. If this
+        #   value and a `if_generation_match` value are both specified, they must
+        #   be the same value or the call will fail. The default value is `nil`.
+        # @param [Integer] if_generation_match This precondition makes an operation
+        #   involving the file conditional on whether the file's current generation
+        #   matches the given value. If this value and a `generation` value are
+        #   both specified, they must be the same value or the call will fail.
+        #   The default value is `nil`.
+        #
+        # @return [File::Reference] The new file reference object.
+        #
+        def to_file_reference generation: nil, if_generation_match: nil
+          File::Reference.new name, generation: generation, if_generation_match: if_generation_match
+        end
+
+        ##
         # @private
         # Determines whether the file was created without retrieving the
         # resource record from the API.
@@ -1943,6 +1962,48 @@ module Google
           # NoMethodError: undefined method `each' for nil:NilClass
           attr_params.reject! { |k, v| k == :metadata && v.nil? }
           Google::Apis::StorageV1::Object.new(**attr_params)
+        end
+
+        ##
+        # Represents a reference to a file, with preconditions. See `sources` in {Bucket#compose}.
+        #
+        # @!attribute [r] bucket The name of the bucket containing the file.
+        #   @return [String]
+        # @!attribute [r] name The name of the file.
+        #   @return [String]
+        # @!attribute [r] generation The content generation of the file. If
+        #   this value and a `if_generation_match` value are both specified,
+        #   they must be the same value or the call will fail.
+        #   @return [Integer]
+        # @!attribute [r] if_generation_match This precondition makes an operation
+        #   involving the file conditional on whether the file's current generation
+        #   matches the given value. If this value and a `generation` value are
+        #   both specified, they must be the same value or the call will fail.
+        #   @return [Integer]
+        #
+        class Reference
+          attr_reader :name
+          attr_reader :generation
+          attr_reader :if_generation_match
+
+          ##
+          # Creates a new File::Reference object.
+          #
+          # @param [String] name The name of the file.
+          # @param [Integer] generation The content generation of the file. If this
+          #   value and a `if_generation_match` value are both specified, they must
+          #   be the same value or the call will fail.
+          # @param [Integer] if_generation_match This precondition makes an operation
+          #   involving the file conditional on whether the file's current generation
+          #   matches the given value. If this value and a `generation` value are
+          #   both specified, they must be the same value or the call will fail.
+          #
+          def initialize name, generation: nil, if_generation_match: nil
+            raise ArgumentError, "name must not be nil" unless name
+            @name = name
+            @generation = generation
+            @if_generation_match = if_generation_match
+          end
         end
 
         protected
