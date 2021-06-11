@@ -20,7 +20,8 @@ describe Google::Cloud::Storage::File, :mock_storage do
   let(:bucket_user_project) { Google::Cloud::Storage::Bucket.from_gapi bucket_gapi, storage.service, user_project: true }
 
   let(:custom_time) { DateTime.new 2020, 2, 3, 4, 5, 6 }
-  let(:file_hash) { random_file_hash bucket.name, "file.ext", custom_time: custom_time }
+  let(:file_name) { "file.ext" }
+  let(:file_hash) { random_file_hash bucket.name, file_name, custom_time: custom_time }
   let(:file_gapi) { Google::Apis::StorageV1::Object.from_json file_hash.to_json }
   let(:file) { Google::Cloud::Storage::File.from_gapi file_gapi, storage.service }
   let(:file_user_project) { Google::Cloud::Storage::File.from_gapi file_gapi, storage.service, user_project: true }
@@ -1438,8 +1439,6 @@ describe Google::Cloud::Storage::File, :mock_storage do
   end
 
   it "can reload itself" do
-    file_name = "file.ext"
-
     mock = Minitest::Mock.new
     mock.expect :get_object, Google::Apis::StorageV1::Object.from_json(random_file_hash(bucket.name, file_name, generations[3]).to_json),
       get_object_args(bucket.name, file_name)
@@ -1458,8 +1457,6 @@ describe Google::Cloud::Storage::File, :mock_storage do
   end
 
   it "can reload itself with user_project set to true" do
-    file_name = "file.ext"
-
     mock = Minitest::Mock.new
     mock.expect :get_object, Google::Apis::StorageV1::Object.from_json(random_file_hash(bucket_user_project.name, file_name, generations[3]).to_json),
       get_object_args(bucket_user_project.name, file_name, user_project: "test")
@@ -1478,8 +1475,6 @@ describe Google::Cloud::Storage::File, :mock_storage do
   end
 
   it "can list its generations" do
-    file_name = "file.ext"
-
     mock = Minitest::Mock.new
     mock.expect :get_object, Google::Apis::StorageV1::Object.from_json(random_file_hash(bucket.name, file_name, generations[0]).to_json),
       get_object_args(bucket.name, file_name)
@@ -1504,8 +1499,6 @@ describe Google::Cloud::Storage::File, :mock_storage do
   end
 
   it "can list its generations with user_project set to true" do
-    file_name = "file.ext"
-
     mock = Minitest::Mock.new
     mock.expect :get_object, Google::Apis::StorageV1::Object.from_json(random_file_hash(bucket_user_project.name, file_name, generations[0]).to_json),
       get_object_args(bucket_user_project.name, file_name, user_project: "test")
@@ -1532,6 +1525,39 @@ describe Google::Cloud::Storage::File, :mock_storage do
 
   it "knows its KMS encryption key" do
     _(file.kms_key).must_equal kms_key
+  end
+
+  it "returns a source file reference for use in Bucket#compose" do
+    file_ref = file.to_file_reference generation: generation, if_generation_match: generation
+    _(file_ref).must_be_kind_of Google::Cloud::Storage::File::Reference
+    _(file_ref.name).must_equal file_name
+    _(file_ref.generation).must_equal generation
+    _(file_ref.if_generation_match).must_equal generation
+  end
+
+  it "returns a source file reference without the file generation if none is provided" do
+    _(file.generation).must_equal generation
+
+    file_ref = file.to_file_reference
+    _(file_ref.name).must_equal file_name
+    _(file_ref.generation).must_be :nil?
+    _(file_ref.if_generation_match).must_be :nil?
+  end
+
+  describe Google::Cloud::Storage::File::Reference do
+    let :file_ref do
+      Google::Cloud::Storage::File::Reference.new(
+        file_name,
+        generation: generation,
+        if_generation_match: generation
+      )
+    end
+    it "knows its attributes" do
+      _(file_ref).must_be_kind_of Google::Cloud::Storage::File::Reference
+      _(file_ref.name).must_equal file_name
+      _(file_ref.generation).must_equal generation
+      _(file_ref.if_generation_match).must_equal generation
+    end
   end
 
   def gzip_data data

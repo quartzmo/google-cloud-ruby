@@ -1450,6 +1450,21 @@ module Google
         #
         #   new_file = bucket.compose [file_1, file_2], "path/to/new-file.ext"
         #
+        # @example Specify `if_generation_match` preconditions for the source files:
+        #   require "google/cloud/storage"
+        #
+        #   storage = Google::Cloud::Storage.new
+        #
+        #   bucket = storage.bucket "my-bucket"
+        #
+        #   file_1 = bucket.file "path/to/my-file-1.ext"
+        #   file_2 = bucket.file "path/to/my-file-2.ext"
+        #
+        #   file_ref_1 = file_1.to_file_reference if_generation_match: 1490390259479000
+        #   file_ref_2 = file_2.to_file_reference if_generation_match: 1490310974144000
+        #
+        #   new_file = bucket.compose [file_ref_1, file_ref_2], "path/to/new-file.ext"
+        #
         def compose sources,
                     destination,
                     acl: nil,

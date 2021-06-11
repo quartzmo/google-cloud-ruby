@@ -269,6 +269,15 @@ YARD::Doctest.configure do |doctest|
     end
   end
 
+  doctest.before "Google::Cloud::Storage::Bucket#compose@Specify `if_generation_match` preconditions for the source files:" do
+    mock_storage do |mock|
+      mock.expect :get_bucket, bucket_gapi, ["my-bucket", Hash]
+      mock.expect :get_object, file_gapi, ["my-bucket", "path/to/my-file-1.ext", Hash]
+      mock.expect :get_object, file_gapi, ["my-bucket", "path/to/my-file-2.ext", Hash]
+      mock.expect :compose_object, file_gapi, ["my-bucket", "path/to/new-file.ext", Google::Apis::StorageV1::ComposeRequest, Hash]
+    end
+  end
+
   doctest.before "Google::Cloud::Storage::Bucket#update" do
     mock_storage do |mock|
       mock.expect :get_bucket, bucket_gapi("my-todo-app"), ["my-todo-app", Hash]
@@ -967,6 +976,15 @@ YARD::Doctest.configure do |doctest|
     end
   end
 
+  doctest.before "Google::Cloud::Storage::File#to_file_reference" do
+    mock_storage do |mock|
+      mock.expect :get_bucket, bucket_gapi, ["my-bucket", Hash]
+      mock.expect :get_object, file_gapi, ["my-bucket", "path/to/my-file-1.ext", Hash]
+      mock.expect :get_object, file_gapi, ["my-bucket", "path/to/my-file-2.ext", Hash]
+      mock.expect :compose_object, file_gapi, ["my-bucket", "path/to/new-file.ext", Google::Apis::StorageV1::ComposeRequest, Hash]
+    end
+  end
+
   # File::Acl
 
   doctest.before "Google::Cloud::Storage::File::Acl" do
@@ -1072,6 +1090,17 @@ YARD::Doctest.configure do |doctest|
     mock_storage do |mock|
       mock.expect :get_bucket, bucket_gapi, ["my-bucket", Hash]
       mock.expect :list_objects, list_files_gapi, ["my-bucket", Hash]
+    end
+  end
+
+  # File::Reference
+
+  doctest.before "Google::Cloud::Storage::File::Reference" do
+    mock_storage do |mock|
+      mock.expect :get_bucket, bucket_gapi, ["my-bucket", Hash]
+      mock.expect :get_object, file_gapi, ["my-bucket", "path/to/my-file-1.ext", Hash]
+      mock.expect :get_object, file_gapi, ["my-bucket", "path/to/my-file-2.ext", Hash]
+      mock.expect :compose_object, file_gapi, ["my-bucket", "path/to/new-file.ext", Google::Apis::StorageV1::ComposeRequest, Hash]
     end
   end
 

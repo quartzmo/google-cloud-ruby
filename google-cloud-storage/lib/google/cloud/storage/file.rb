@@ -1905,6 +1905,21 @@ module Google
         #
         # @return [File::Reference] The new file reference object.
         #
+        # @example
+        #   require "google/cloud/storage"
+        #
+        #   storage = Google::Cloud::Storage.new
+        #
+        #   bucket = storage.bucket "my-bucket"
+        #
+        #   file_1 = bucket.file "path/to/my-file-1.ext"
+        #   file_2 = bucket.file "path/to/my-file-2.ext"
+        #
+        #   file_ref_1 = file_1.to_file_reference if_generation_match: 1490390259479000
+        #   file_ref_2 = file_2.to_file_reference if_generation_match: 1490310974144000
+        #
+        #   new_file = bucket.compose [file_ref_1, file_ref_2], "path/to/new-file.ext"
+        #
         def to_file_reference generation: nil, if_generation_match: nil
           File::Reference.new name, generation: generation, if_generation_match: if_generation_match
         end
@@ -1965,10 +1980,9 @@ module Google
         end
 
         ##
-        # Represents a reference to a file, with preconditions. See `sources` in {Bucket#compose}.
+        # Represents a reference to a file, with optional preconditions.
+        # See `sources` in {Bucket#compose}.
         #
-        # @!attribute [r] bucket The name of the bucket containing the file.
-        #   @return [String]
         # @!attribute [r] name The name of the file.
         #   @return [String]
         # @!attribute [r] generation The content generation of the file. If
@@ -1980,6 +1994,24 @@ module Google
         #   matches the given value. If this value and a `generation` value are
         #   both specified, they must be the same value or the call will fail.
         #   @return [Integer]
+        #
+        # @example
+        #   require "google/cloud/storage"
+        #
+        #   storage = Google::Cloud::Storage.new
+        #
+        #   bucket = storage.bucket "my-bucket"
+        #
+        #   file_ref_1 = Google::Cloud::Storage::File::Reference.new(
+        #     "path/to/my-file-1.ext",
+        #     if_generation_match: 1490390259479000
+        #   )
+        #   file_ref_2 = Google::Cloud::Storage::File::Reference.new(
+        #     "path/to/my-file-2.ext",
+        #     if_generation_match: 1490310974144000
+        #   )
+        #
+        #   new_file = bucket.compose [file_ref_1, file_ref_2], "path/to/new-file.ext"
         #
         class Reference
           attr_reader :name
@@ -1997,6 +2029,24 @@ module Google
           #   involving the file conditional on whether the file's current generation
           #   matches the given value. If this value and a `generation` value are
           #   both specified, they must be the same value or the call will fail.
+          #
+          # @example
+          #   require "google/cloud/storage"
+          #
+          #   storage = Google::Cloud::Storage.new
+          #
+          #   bucket = storage.bucket "my-bucket"
+          #
+          #   file_ref_1 = Google::Cloud::Storage::File::Reference.new(
+          #     "path/to/my-file-1.ext",
+          #     if_generation_match: 1490390259479000
+          #   )
+          #   file_ref_2 = Google::Cloud::Storage::File::Reference.new(
+          #     "path/to/my-file-2.ext",
+          #     if_generation_match: 1490310974144000
+          #   )
+          #
+          #   new_file = bucket.compose [file_ref_1, file_ref_2], "path/to/new-file.ext"
           #
           def initialize name, generation: nil, if_generation_match: nil
             raise ArgumentError, "name must not be nil" unless name
