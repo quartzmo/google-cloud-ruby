@@ -150,7 +150,7 @@ describe Google::Cloud::Storage::File, :storage do
     end
     uploaded.delete
   end
-
+focus
   it "creates and gets and updates and deletes a file" do
     _(bucket.file("CRUDLogo")).must_be :nil?
 
@@ -158,6 +158,8 @@ describe Google::Cloud::Storage::File, :storage do
     uploaded = bucket.create_file original, "CRUDLogo.png"
 
     _(bucket.file("CRUDLogo.png")).wont_be :nil?
+    # If-Match header
+    _(bucket.file("CRUDLogo.png", etag: uploaded.etag)).wont_be :nil?
 
     generation = uploaded.generation
     _(generation).must_be_kind_of Integer

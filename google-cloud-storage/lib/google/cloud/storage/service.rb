@@ -375,6 +375,7 @@ module Google
                      if_metageneration_match: nil,
                      if_metageneration_not_match: nil,
                      key: nil,
+                     etag: nil,
                      user_project: nil
           execute do
             service.get_object \
@@ -385,7 +386,7 @@ module Google
               if_metageneration_match: if_metageneration_match,
               if_metageneration_not_match: if_metageneration_not_match,
               user_project: user_project(user_project),
-              options: key_options(key)
+              options: key_options(key, etag: etag)
           end
         end
 
@@ -650,8 +651,11 @@ module Google
           String(user_project) # convert the value to a string
         end
 
-        def key_options key
+        def key_options key, etag: nil
           options = {}
+          if etag
+            options[:header] = { "If-Match" => etag }
+          end
           encryption_key_headers options, key if key
           options
         end

@@ -1144,7 +1144,8 @@ module Google
                  if_metageneration_match: nil,
                  if_metageneration_not_match: nil,
                  skip_lookup: nil,
-                 encryption_key: nil
+                 encryption_key: nil,
+                 etag: nil
           ensure_service!
           if skip_lookup
             return File.new_lazy name, path, service,
@@ -1157,6 +1158,7 @@ module Google
                                               if_metageneration_match: if_metageneration_match,
                                               if_metageneration_not_match: if_metageneration_not_match,
                                               key: encryption_key,
+                                              etag: etag,
                                               user_project: user_project
           File.from_gapi gapi, service, user_project: user_project
         rescue Google::Cloud::NotFoundError
