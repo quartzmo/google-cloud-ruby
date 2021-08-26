@@ -1,4 +1,4 @@
-# Copyright 2019 Google LLC All Rights Reserved.
+# Copyright 2021 Google LLC All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# [START getting_started_gce_startup_script]
 # Install Stackdriver logging agent
 curl -sSO https://dl.google.com/cloudagents/install-logging-agent.sh
 bash install-logging-agent.sh
@@ -20,7 +19,7 @@ bash install-logging-agent.sh
 # Install dependencies
 apt-get update && apt-get -y upgrade && apt-get install -y autoconf bison \
     build-essential git libssl-dev libyaml-dev libreadline6-dev zlib1g-dev \
-    libncurses5-dev libffi-dev libgdbm3 libgdbm-dev nginx supervisor
+    libncurses5-dev libffi-dev libgdbm3 libgdbm-dev supervisor
 
 # Account to own server process
 useradd -m -d /home/rubyapp rubyapp
@@ -39,29 +38,19 @@ EOF
 su -l rubyapp -c "gem install bundler"
 
 # Fetch source code
-git clone https://github.com/GoogleCloudPlatform/getting-started-ruby.git /opt/app
+git clone https://github.com/quartzmo/google-cloud-ruby.git /opt/app
 
 # Set ownership to newly created account
 chown -R rubyapp:rubyapp /opt/app
 
 # Install ruby dependencies
-su -l rubyapp -c "cd /opt/app/gce && bundle install"
-
-# Disable the default NGINX configuration
-rm /etc/nginx/sites-enabled/default
-
-# Enable our NGINX configuration
-cp /opt/app/gce/rubyapp.conf /etc/nginx/sites-available/rubyapp.conf
-ln -s /etc/nginx/sites-available/rubyapp.conf /etc/nginx/sites-enabled/rubyapp.conf
-
-# Start NGINX
-systemctl restart nginx.service
+su -l rubyapp -c "cd /opt/app/google-cloud-pubsub && git checkout pubsub-stream-deadlock-issue-8415 && bundle install"
 
 # Configure supervisor to run the ruby app
 cat >/etc/supervisor/conf.d/rubyapp.conf << EOF
 [program:rubyapp]
-directory=/opt/app/gce
-command=bash -lc "bundle exec ruby app.rb"
+directory=/opt/app/google-cloud-pubsub
+command=bash -lc "bundle exec ruby publish.rb"
 autostart=true
 autorestart=true
 user=rubyapp
@@ -74,4 +63,3 @@ supervisorctl reread
 supervisorctl update
 
 # Application should now be running under supervisor
-# [END getting_started_gce_startup_script]

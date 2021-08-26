@@ -1,4 +1,6 @@
-# Copyright 2019 Google LLC All Rights Reserved.
+#! /bin/bash
+
+# Copyright 2021 Google LLC All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,24 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# [START getting_started_gce_create_instance]
-MY_INSTANCE_NAME="my-app-instance"
-ZONE=us-central1-a
 
-gcloud compute instances create $MY_INSTANCE_NAME \
-    --image-family=debian-9 \
+gcloud compute instances create pubsub-load-publisher-1 \
+    --image-family=debian-10 \
     --image-project=debian-cloud \
-    --machine-type=g1-small \
+    --machine-type=n1-standard-1 \
     --scopes userinfo-email,cloud-platform \
     --metadata-from-file startup-script=startup-script.sh \
-    --zone $ZONE \
+    --zone us-central1-a \
     --tags http-server
-# [END getting_started_gce_create_instance]
-
-# [START getting_started_gce_allow_port]
-gcloud compute firewall-rules create default-allow-http-80 \
-    --allow tcp:80 \
-    --source-ranges 0.0.0.0/0 \
-    --target-tags http-server \
-    --description "Allow port 80 access to http-server"
-# [END getting_started_gce_allow_port]

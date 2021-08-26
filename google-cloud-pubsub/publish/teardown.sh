@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# Copyright 2019 Google LLC All Rights Reserved.
+# Copyright 2021 Google LLC All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,14 +14,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -x
-
-# [START getting_started_gce_teardown]
-MY_INSTANCE_NAME="my-app-instance"
-ZONE=us-central1-a
-
-gcloud compute instances delete $MY_INSTANCE_NAME \
-    --zone=$ZONE --delete-disks=all
-
-gcloud compute firewall-rules delete default-allow-http-80
-# [END getting_started_gce_teardown]
+gcloud compute instances delete pubsub-load-publisher-1 \
+    --zone=us-central1-a --delete-disks=all
