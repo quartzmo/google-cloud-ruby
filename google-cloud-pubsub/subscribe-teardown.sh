@@ -14,11 +14,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-gcloud compute instances create pubsub-load-publisher-9 \
-    --image-family=debian-10 \
-    --image-project=debian-cloud \
-    --machine-type=n1-standard-1 \
-    --scopes cloud-platform \
-    --metadata-from-file startup-script=publish-startup-script.sh \
-    --zone us-central1-a
+gcloud compute instances delete pubsub-load-subscriber-1 \
+    --zone=us-central1-a --delete-disks=all

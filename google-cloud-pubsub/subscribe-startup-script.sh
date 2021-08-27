@@ -1,5 +1,3 @@
-#! /bin/bash
-
 # Copyright 2021 Google LLC All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Install git, ruby and bundler
+apt-get update && apt-get -y upgrade && apt-get install -y git ruby-full
+gem install bundler
 
-gcloud compute instances create pubsub-load-publisher-9 \
-    --image-family=debian-10 \
-    --image-project=debian-cloud \
-    --machine-type=n1-standard-1 \
-    --scopes cloud-platform \
-    --metadata-from-file startup-script=publish-startup-script.sh \
-    --zone us-central1-a
+# Fetch source code
+git clone https://github.com/quartzmo/google-cloud-ruby.git
+
+# Install ruby dependencies and run the app
+cd google-cloud-ruby/google-cloud-pubsub
+git checkout pubsub-stream-deadlock-issue-8415
+bundle install
+bundle exec ruby subscribe.rb ruby-issue-8415-topic-85f08310
