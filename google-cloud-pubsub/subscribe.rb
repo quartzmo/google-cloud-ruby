@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require "google/cloud/pubsub"
+require "google/cloud/logging"
+require "securerandom"
+
 # Cleanup
 def shut_down subscription, subscriber
   if subscriber
@@ -32,17 +36,18 @@ end
 $subscriber = nil
 
 begin
-  puts "subscribe.rb PID: #{Process.pid}"
-  require "google/cloud/pubsub"
-  require "securerandom"
+  logging = Google::Cloud::Logging.new
+  resource = logging.resource "global"
+  log_name = "subscribe-rb-#{Process.pid}"
+
   pubsub = Google::Cloud::PubSub.new
   topic_name = ARGV[0]
-  puts "ARGV[0] topic_name: #{topic_name}"
   topic = pubsub.topic topic_name
   raise "Topic not found for ARGV[0]: #{topic_name}" unless topic
   subscription_name = "#{topic_name}-sub-#{SecureRandom.hex(4)}".downcase
   $subscription = topic.subscribe subscription_name
-  puts "Created subscription: #{$subscription.name}"
+  entry = logging.entry payload: "[#{log_name}] Created subscription: #{$subscription.name} for topic: #{topic.name}"
+  logging.write_entries [entry], log_name: log_name, resource: resource
 
   # From https://github.com/googleapis/google-cloud-ruby/issues/8415
   subscriber_options = {
@@ -57,17 +62,20 @@ begin
     sleep 3
     if rand(10) == 0 # Simulate a processing error rate of 10%
       msg.modify_ack_deadline! 10
-      puts "MOD: #{msg.data}"
+      entry = logging.entry payload: "MOD: #{msg.data}"
+      logging.write_entries [entry], log_name: log_name, resource: resource
     else
       msg.acknowledge!
-      puts "ack: #{msg.data}"
+      entry = logging.entry payload: "ack: #{msg.data}"
+      logging.write_entries [entry], log_name: log_name, resource: resource
     end
   end
 
   $subscriber.start
   loop do
     sleep 5
-    puts "stream_pool: #{$subscriber.stream_pool.inspect}"
+    entry = logging.entry payload: "[#{log_name}] stream_pool: #{$subscriber.stream_pool.inspect}"
+    logging.write_entries [entry], log_name: log_name, resource: resource
   end
 ensure
   shut_down $subscription, $subscriber

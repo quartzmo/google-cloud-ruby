@@ -15,11 +15,10 @@
 # limitations under the License.
 
 
-gcloud compute instances create pubsub-load-publisher-1 \
+gcloud compute instances create pubsub-load-publisher-8 \
     --image-family=debian-10 \
     --image-project=debian-cloud \
     --machine-type=n1-standard-1 \
-    --scopes userinfo-email,cloud-platform \
-    --metadata-from-file startup-script=startup-script.sh \
-    --zone us-central1-a \
-    --tags http-server
+    --scopes cloud-platform \
+    --metadata-from-file startup-script=publish-startup-script.sh \
+    --zone us-central1-a

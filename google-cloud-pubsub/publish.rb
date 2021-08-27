@@ -14,43 +14,45 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Cleanup
-def shut_down topic
-  if topic
-    puts "Deleting topic: #{topic.name}"
-    topic.delete
-    puts "Deleted topic: #{topic.name}"
-  end
-end
+require "google/cloud/pubsub"
+require "google/cloud/logging"
+require "securerandom"
 
 $topic = nil
 
 begin
-  puts "publish.rb PID: #{Process.pid}"
-  require "google/cloud/pubsub"
-  require "securerandom"
+  logging = Google::Cloud::Logging.new
+  resource = logging.resource "global"
+  log_name = "publish-rb-#{Process.pid}"
+
   pubsub = Google::Cloud::PubSub.new
   topic_name = "ruby-issue-8415-topic-#{SecureRandom.hex(4)}".downcase
   $topic = pubsub.create_topic topic_name
-  puts "Created topic: #{$topic.name}"
+  entry = logging.entry payload: "[#{log_name}] Created topic: #{$topic.name}"
+  logging.write_entries [entry], log_name: log_name, resource: resource
+
   count = 0
   loop do
     count += 1
-    $topic.publish count.to_s
-    print "."
+    $topic.publish_async count.to_s
+    if count % 100 == 0
+      entry = logging.entry payload: "published: #{count}"
+      logging.write_entries [entry], log_name: log_name, resource: resource
+    end
+
     sleep 0.1
   end
 
 ensure
-  shut_down $topic
+  $topic.delete if $topic
 end
 
 Signal.trap "INT" do
-  shut_down $topic
+  $topic.delete if $topic
   exit
 end
 
 Signal.trap "TERM" do
-  shut_down $topic
+  $topic.delete if $topic
   exit
 end
