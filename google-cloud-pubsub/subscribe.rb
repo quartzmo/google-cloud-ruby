@@ -14,6 +14,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# {
+#   "textPayload": "[subscribe-rb-1] Created subscription: projects/test-quartzmo-cloudrun-1/subscriptions/ruby-issue-8415-topic-85f08310-sub-ed0fbf39 for topic: projects/test-quartzmo-cloudrun-1/topics/ruby-issue-8415-topic-85f08310",
+#   "insertId": "v257vaungo8vnlb8",
+#   "resource": {
+#     "type": "k8s_container",
+#     "labels": {
+#       "pod_name": "nginx-1-66c4595db8-rq92t",
+#       "project_id": "test-quartzmo-cloudrun-1",
+#       "location": "us-central1-b",
+#       "namespace_name": "default",
+#       "container_name": "subscribe-app-sha256-1",
+#       "cluster_name": "cluster-full-access-1"
+#     }
+#   },
+#   "timestamp": "2021-09-07T23:05:43.151450055Z",
+#   "severity": "INFO",
+#   "labels": {
+#     "k8s-pod/app": "nginx-1",
+#     "compute.googleapis.com/resource_name": "gke-cluster-full-access--default-pool-32a67fec-xbj4",
+#     "k8s-pod/pod-template-hash": "66c4595db8"
+#   },
+#   "logName": "projects/test-quartzmo-cloudrun-1/logs/stdout",
+#   "receiveTimestamp": "2021-09-07T23:05:44.967470361Z"
+# }
+
 require "google/cloud/pubsub"
 require "google/cloud/logging"
 require "securerandom"
@@ -46,6 +71,7 @@ begin
   raise "Topic not found for ARGV[0]: #{topic_name}" unless topic
   subscription_name = "#{topic_name}-sub-#{SecureRandom.hex(4)}".downcase
   $subscription = topic.subscribe subscription_name
+  puts "[#{log_name}] Created subscription: #{$subscription.name} for topic: #{topic.name}"
   entry = logging.entry payload: "[#{log_name}] Created subscription: #{$subscription.name} for topic: #{topic.name}"
   logging.write_entries [entry], log_name: log_name, resource: resource
 
@@ -62,10 +88,12 @@ begin
     sleep 3
     if rand(10) == 0 # Simulate a processing error rate of 10%
       msg.modify_ack_deadline! 10
+      puts "MOD: #{msg.data}"
       entry = logging.entry payload: "MOD: #{msg.data}"
       logging.write_entries [entry], log_name: log_name, resource: resource
     else
       msg.acknowledge!
+      puts "ack: #{msg.data}"
       entry = logging.entry payload: "ack: #{msg.data}"
       logging.write_entries [entry], log_name: log_name, resource: resource
     end
@@ -74,6 +102,7 @@ begin
   $subscriber.start
   loop do
     sleep 5
+    puts "[#{log_name}] stream_pool: #{$subscriber.stream_pool.inspect}"
     entry = logging.entry payload: "[#{log_name}] stream_pool: #{$subscriber.stream_pool.inspect}"
     logging.write_entries [entry], log_name: log_name, resource: resource
   end
