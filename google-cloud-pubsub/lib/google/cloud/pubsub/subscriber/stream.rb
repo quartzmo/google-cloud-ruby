@@ -51,6 +51,8 @@ module Google
           def initialize subscriber
             super() # to init MonitorMixin
 
+            puts "Using modified Stream"
+
             @subscriber = subscriber
 
             @request_queue = nil
@@ -249,13 +251,14 @@ module Google
                   @subscriber.buffer.modify_ack_deadline @subscriber.deadline, response.received_messages.map(&:ack_id)
 
                   # Add received messages to inventory
-                  @inventory.add response.received_messages
+                  puts "modified Stream: skipping @inventory.add for #{response.received_messages.size} messages"
+                  # @inventory.add response.received_messages
                 end
 
                 response.received_messages.each do |rec_msg_grpc|
                   rec_msg = ReceivedMessage.from_grpc(rec_msg_grpc, self)
                   # No need to synchronize the callback future
-                  register_callback rec_msg
+                  # register_callback rec_msg
                 end
                 synchronize { pause_streaming! }
               rescue StopIteration
