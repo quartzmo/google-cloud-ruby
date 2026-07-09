@@ -27,10 +27,29 @@ PAP_SKIP_MESSAGE = "Skipping this test due to a change in GCS behavior that disa
                    "access prevention is enforced. See " \
                    "https://cloud.google.com/storage/docs/public-access-prevention for more details.".freeze
 
-# Generate JUnit format test reports
-if ENV["GCLOUD_TEST_GENERATE_XML_REPORT"]
-  require "minitest/reporters"
-  Minitest::Reporters.use! [Minitest::Reporters::SpecReporter.new, Minitest::Reporters::JUnitReporter.new]
+# Configure JUnit XML test formatting for TestGrid build health and test failure tracking.
+if ENV["CI"] || ENV["KOKORO_JOB_NAME"]
+  begin
+    require "fileutils"
+    FileUtils.mkdir_p "tmp/reports"
+    require "minitest/reporters"
+    unless defined? SpongeReporter
+      class SpongeReporter < Minitest::Reporters::JUnitReporter
+        private
+        # Override the default reporter filename format (TEST-minitest.xml) to write
+        # directly to sponge_log.xml as required by Kokoro/Sponge telemetry collection.
+        def filename_for suite
+          File.join @reports_path, "sponge_log.xml"
+        end
+      end
+    end
+    Minitest::Reporters.use! [
+      Minitest::Reporters::SpecReporter.new,
+      SpongeReporter.new("tmp/reports", false, { single_file: true })
+    ]
+  rescue LoadError
+    # Fallback if minitest-reporters is not installed in the bundle.
+  end
 end
 
 # Create shared storage object so we don't create new for each test
